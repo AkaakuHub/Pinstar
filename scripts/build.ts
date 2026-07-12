@@ -1,8 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dir, "..");
 const outdir = resolve(root, "dist");
+await rm(outdir, { recursive: true, force: true });
 await mkdir(outdir, { recursive: true });
 
 const result = await Bun.build({
@@ -23,16 +24,13 @@ if (!result.success) {
 const bundlePath = resolve(outdir, "pinstar.js");
 const bundle = await readFile(bundlePath, "utf8");
 const rawUrl = "https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js";
-const cdnUrl = "https://cdn.jsdelivr.net/gh/AkaakuHub/Pinstar@js/pinstar.js";
 
-const loaderCore = `(async()=>{const d=document,i="pinstar-loader-status";let b=d.getElementById(i);if(!b){b=d.createElement("div");b.id=i;(d.body||d.documentElement).appendChild(b)}Object.assign(b.style,{position:"fixed",top:"max(12px,env(safe-area-inset-top))",left:"50%",transform:"translateX(-50%)",zIndex:"2147483647",maxWidth:"calc(100vw - 24px)",padding:"10px 14px",border:"1px solid rgba(255,255,255,.2)",borderRadius:"12px",background:"rgba(2,6,23,.92)",color:"#f8fafc",font:"600 13px -apple-system,BlinkMacSystemFont,sans-serif",boxShadow:"0 12px 40px rgba(0,0,0,.4)",whiteSpace:"pre-wrap",textAlign:"center"});const m=(t,e=false)=>{b.textContent=t;b.style.background=e?"rgba(127,29,29,.96)":"rgba(2,6,23,.92)";b.style.borderColor=e?"rgba(254,202,202,.55)":"rgba(255,255,255,.2)"};const t=Date.now();try{m("Pinstarを読み込んでいます…");try{const r=${JSON.stringify(rawUrl)}+"?v="+t,e=await fetch(r,{cache:"no-store",credentials:"omit"});if(!e.ok)throw new Error("GitHub raw HTTP "+e.status);const n=await e.text();if(!n.includes("Pinstar"))throw new Error("取得したJavaScriptを確認できません");(0,eval)(n)}catch(e){console.warn("[Pinstar loader] raw/eval failed",e);m("GitHub CDNへ切り替えています…");await new Promise((o,a)=>{const s=d.createElement("script"),q=setTimeout(()=>a(new Error("CDN timeout")),12000);s.src=${JSON.stringify(cdnUrl)}+"?v="+t;s.onload=()=>{clearTimeout(q);o()};s.onerror=()=>{clearTimeout(q);a(new Error("CDN script load failed"))};(d.head||d.documentElement).appendChild(s)})}b.remove();return{ok:true}}catch(e){const x=e&&e.message?e.message:String(e);console.error("[Pinstar loader] failed",e);m("Pinstarの読み込みに失敗しました。\n"+x+"\n外部読込が制限されている場合は bookmarklet-inline.txt を使用してください。",true);throw e}})()`;
+const loaderCore = `(async()=>{const d=document,i="pinstar-loader-status";let b=d.getElementById(i);if(!b){b=d.createElement("div");b.id=i;(d.body||d.documentElement).appendChild(b)}Object.assign(b.style,{position:"fixed",top:"max(12px,env(safe-area-inset-top))",left:"50%",transform:"translateX(-50%)",zIndex:"2147483647",maxWidth:"calc(100vw - 24px)",padding:"10px 14px",border:"1px solid rgba(255,255,255,.2)",borderRadius:"12px",background:"rgba(2,6,23,.92)",color:"#f8fafc",font:"600 13px -apple-system,BlinkMacSystemFont,sans-serif",boxShadow:"0 12px 40px rgba(0,0,0,.4)",whiteSpace:"pre-wrap",textAlign:"center"});const m=(t,e=false)=>{b.textContent=t;b.style.background=e?"rgba(127,29,29,.96)":"rgba(2,6,23,.92)";b.style.borderColor=e?"rgba(254,202,202,.55)":"rgba(255,255,255,.2)"};try{m("Pinstarを読み込んでいます…");const r=${JSON.stringify(rawUrl)}+"?v="+Date.now(),e=await fetch(r,{cache:"no-store",credentials:"omit"});if(!e.ok)throw new Error("GitHub raw HTTP "+e.status);const n=await e.text();if(!n.includes("Pinstar"))throw new Error("取得したJavaScriptを確認できません");(0,eval)(n);b.remove();return{ok:true}}catch(e){const x=e&&e.message?e.message:String(e);console.error("[Pinstar loader] failed",e);m("Pinstarの読み込みに失敗しました。\\n"+x,true);throw e}})()`;
 const bookmarklet = `javascript:void(${loaderCore}.catch(()=>{}))`;
 const shortcutLoader = `${loaderCore}.then(()=>completion({ok:true,version:"latest"})).catch(e=>completion({ok:false,error:e&&e.message?e.message:String(e)}));`;
-const inlineBookmarklet = `javascript:void(${bundle.trim().replace(/;$/, "")})`;
 
 await writeFile(resolve(outdir, "bookmarklet.txt"), bookmarklet, "utf8");
 await writeFile(resolve(outdir, "shortcut-loader.js"), shortcutLoader, "utf8");
-await writeFile(resolve(outdir, "bookmarklet-inline.txt"), inlineBookmarklet, "utf8");
 await writeFile(resolve(outdir, ".nojekyll"), "", "utf8");
 
 const escapeHtml = (value: string): string => value
@@ -42,12 +40,11 @@ const escapeHtml = (value: string): string => value
 
 const html = `<!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pinstar Installer</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#020617;color:#e2e8f0;margin:0;padding:24px}main{max-width:720px;margin:auto}section{background:#0f172a;border:1px solid #334155;border-radius:16px;padding:18px;margin:14px 0}button,a{display:inline-block;border:0;border-radius:12px;padding:12px 15px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700}code,textarea{font-family:ui-monospace,monospace}textarea{width:100%;height:150px;background:#020617;color:#cbd5e1;border:1px solid #334155;border-radius:10px;padding:10px;box-sizing:border-box}small{color:#94a3b8}</style></head>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#020617;color:#e2e8f0;margin:0;padding:24px}main{max-width:720px;margin:auto}section{background:#0f172a;border:1px solid #334155;border-radius:16px;padding:18px;margin:14px 0}button,a{display:inline-block;border:0;border-radius:12px;padding:12px 15px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700}code,textarea{font-family:ui-monospace,monospace}textarea{width:100%;height:150px;background:#020617;color:#cbd5e1;border:1px solid #334155;border-radius:10px;padding:10px;box-sizing:border-box}</style></head>
 <body><main><h1>Pinstar</h1><p>YouTubeの通常ページへカメラUIを追加するiPhone Safari向けツールです。</p>
-<section><h2>ブックマークレット</h2><p>下の内容をSafariのブックマークURLへ貼り付けます。読み込み中と失敗理由はYouTubeページ上に表示されます。</p><button data-copy="bookmarklet">コピー</button><textarea id="bookmarklet" readonly>${escapeHtml(bookmarklet)}</textarea></section>
+<section><h2>ブックマークレット</h2><p>下の内容をSafariのブックマークURLへ貼り付けます。JavaScriptはGitHub rawの1か所からだけ読み込みます。</p><button data-copy="bookmarklet">コピー</button><textarea id="bookmarklet" readonly>${escapeHtml(bookmarklet)}</textarea></section>
 <section><h2>ショートカット</h2><p>「WebページでJavaScriptを実行」アクションへ貼り付けます。</p><button data-copy="shortcut">コピー</button><textarea id="shortcut" readonly>${escapeHtml(shortcutLoader)}</textarea></section>
-<section><h2>外部読込を使わない版</h2><p>GitHub rawとCDNの両方がページ側の制限で失敗した場合に使用します。更新時はブックマークURLを再度置き換えます。</p><a href="bookmarklet-inline.txt">bookmarklet-inline.txt</a></section>
-<section><h2>直接ファイル</h2><p><a href="pinstar.js">pinstar.js</a></p></section>
+<section><h2>配信ファイル</h2><p><a href="pinstar.js">pinstar.js</a></p></section>
 </main><script>document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{const e=document.getElementById(b.dataset.copy);await navigator.clipboard.writeText(e.value);b.textContent='コピー済み'})</script></body></html>`;
 await writeFile(resolve(outdir, "index.html"), html, "utf8");
 console.log(`Built ${bundle.length} byte bundle`);
