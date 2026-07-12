@@ -97,7 +97,7 @@ export const createView = (): View => {
   const centerCard = element("div", { id: "center-card", class: "glass" });
   centerCard.append(
     element("h1", {}, "カメラを開始"),
-    element("p", {}, "映像はカメラ、音声はYouTubeのvideo要素から直接取得します。マイクは使用しません。"),
+    element("p", {}, "映像にはカメラだけを使用します。録画開始時に画面・タブ音声共有の許可を求め、マイクは使用しません。"),
   );
   const startCamera = button("start-camera", "カメラを許可して開始", "");
   centerCard.append(startCamera);
