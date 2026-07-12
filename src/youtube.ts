@@ -1,9 +1,5 @@
 import { DOUBLE_TAP_MS } from "./config";
 
-interface CapturableVideoElement extends HTMLVideoElement {
-  captureStream?: () => MediaStream;
-}
-
 const VIDEO_SELECTORS = [
   "video.html5-main-video",
   "#movie_player video",
@@ -12,11 +8,11 @@ const VIDEO_SELECTORS = [
 ] as const;
 
 export class YouTubeController {
-  private video: CapturableVideoElement | null = null;
+  private video: HTMLVideoElement | null = null;
 
-  refresh(): CapturableVideoElement | null {
+  refresh(): HTMLVideoElement | null {
     for (const selector of VIDEO_SELECTORS) {
-      const candidate = document.querySelector<CapturableVideoElement>(selector);
+      const candidate = document.querySelector<HTMLVideoElement>(selector);
       if (candidate) {
         candidate.playsInline = true;
         this.video = candidate;
@@ -27,7 +23,7 @@ export class YouTubeController {
     return null;
   }
 
-  get current(): CapturableVideoElement | null {
+  get current(): HTMLVideoElement | null {
     return this.video ?? this.refresh();
   }
 
@@ -49,24 +45,6 @@ export class YouTubeController {
     video.currentTime = Math.max(0, Math.min(1, fraction)) * video.duration;
   }
 
-  captureAudioTrack(): MediaStreamTrack {
-    const video = this.requireVideo();
-    if (typeof video.captureStream !== "function") {
-      throw new Error("このSafariではHTMLMediaElement.captureStream()を使用できません。");
-    }
-
-    const stream = video.captureStream();
-    const audioTrack = stream.getAudioTracks()[0];
-    if (!audioTrack) {
-      stream.getTracks().forEach((track) => track.stop());
-      throw new Error("YouTubeの再生音声トラックを取得できませんでした。");
-    }
-
-    const clone = audioTrack.clone();
-    stream.getTracks().forEach((track) => track.stop());
-    return clone;
-  }
-
   setupDoubleTap(element: HTMLElement, seconds: number, onSeek: () => void): () => void {
     let lastTap = 0;
     const listener = (event: PointerEvent): void => {
@@ -85,7 +63,7 @@ export class YouTubeController {
     return () => element.removeEventListener("pointerup", listener);
   }
 
-  private requireVideo(): CapturableVideoElement {
+  private requireVideo(): HTMLVideoElement {
     const video = this.current;
     if (!video) throw new Error("YouTube動画のvideo要素が見つかりません。");
     return video;
