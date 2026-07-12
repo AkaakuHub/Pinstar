@@ -45,6 +45,10 @@ https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js
 4. 作成したブックマークを実行します。
 5. 「カメラを許可して開始」を押します。
 
+ブックマークレットの実行直後に、YouTubeページ上へ読み込み状態を表示します。GitHub rawから取得できない場合はjsDelivrへ自動的に切り替えます。両方とも失敗した場合は、その理由と`bookmarklet-inline.txt`を使用する案内を赤いエラー表示で残します。
+
+`bookmarklet-inline.txt`は外部JavaScriptを読み込みません。その代わり、Pinstarを更新した後はブックマークのURLを新しい内容へ置き換える必要があります。
+
 ### iOSショートカット
 
 1. ショートカットで「WebページでJavaScriptを実行」を追加します。
