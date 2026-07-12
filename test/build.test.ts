@@ -5,6 +5,7 @@ const sourceFiles = [
   "src/index.ts",
   "src/app.ts",
   "src/camera.ts",
+  "src/display-audio.ts",
   "src/youtube.ts",
   "src/recorder.ts",
   "src/storage.ts",
@@ -21,10 +22,11 @@ describe("Pinstar build", () => {
     expect(bundle.length).toBeGreaterThan(8_000);
     expect(bundle).toContain("Pinstar");
     expect(bundle).toContain("MediaRecorder");
-    expect(bundle).toContain("captureStream");
+    expect(bundle).toContain("getDisplayMedia");
     expect(bundle).toContain("navigator.share");
     expect(bundle).toContain("localStorage");
     expect(bundle).not.toContain("createMediaStreamDestination");
+    expect(bundle).not.toContain("captureStream");
     expect(bundle).not.toContain("jsdelivr");
     expect(bundle).not.toMatch(/\bimport\s/);
   });
