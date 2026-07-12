@@ -11,48 +11,48 @@ Pinstarは、iPhoneのSafariで開いた通常のYouTube動画ページへ、カ
 - 画面の左右をダブルタップして5秒移動する
 - 前面・背面などのカメラ入力を選択する
 - iPhoneの横画面内へ収まるUIを表示する
-- 読み込み、カメラ、YouTube検出のエラーを画面内ログに表示する
+- カメラとYouTube検出のエラーを画面内ログに表示する
 
-## 動作方式
+## リポジトリ構成
 
-YouTube動画そのものや音声URLは取得しません。Safariで正常に再生できているYouTubeページの上へ、`getUserMedia({ video: ..., audio: false })`で取得したカメラ映像を重ねます。完成動画はiPhone標準の画面収録で保存します。画面収録のマイクをオフにすることで、周囲の音を追加しません。
+`main`ブランチにはTypeScriptのソースコード、固定ブックマークレット、説明、テスト、GitHub Actionsを置きます。
 
-Appleは、画面収録で画面と音を記録できる一方、一部のアプリやコンテンツでは音声または映像の収録が許可されない場合があると説明しています。対象動画とiOSバージョンで実機確認が必要です。
+`js`ブランチには、GitHub ActionsがBunで生成した次の1ファイルだけを置きます。
 
-## インストール
+```text
+pinstar.js
+```
 
-`main`へpushするとGitHub ActionsがTypeScriptをBunでビルドし、生成物だけを`js`ブランチへforce-pushします。
+ブックマークレット、HTML、説明文、ショートカット用ローダー、フォールバック用ファイルは`js`ブランチへ配置しません。
 
-生成物:
+## 固定ブックマークレット
 
-- `pinstar.js`: 実行本体
-- `bookmarklet.txt`: GitHub raw上の`pinstar.js`を読み込むブックマークレット
-- `shortcut-loader.js`: iOSショートカットの「WebページでJavaScriptを実行」用
-- `index.html`: コピー用ページ
+ブックマークレットは`main`ブランチの[`bookmarklet.txt`](./bookmarklet.txt)に固定しています。ビルド時に生成または変更しません。
 
-本体URL:
+ブックマークレットが参照する外部URLは次の1つだけです。
 
 ```text
 https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js
 ```
 
-ローダーはこのGitHub raw URLだけを使用します。CDN、インライン版、別URLへの切り替えは行いません。読み込みに失敗した場合は、そのエラーをYouTubeページ上へ表示して終了します。
+YouTubeページではTrusted Typesが有効な場合があるため、固定ブックマークレットは`script.src`へ文字列を代入しません。GitHub rawから`pinstar.js`を取得し、Trusted Typesの`default`ポリシーで`TrustedScript`として実行します。同じポリシーの`createHTML`は、Pinstar本体がShadow DOMのUIを構築するときにも使用されます。
 
-### Safariブックマークレット
+CDN、別URL、インライン版へのフォールバックはありません。取得または実行に失敗した場合は、エラーを表示して終了します。
 
-1. Safariで適当なページをブックマークします。
-2. ブックマークを編集し、URLを`js`ブランチの`bookmarklet.txt`の内容へ置き換えます。
-3. Safariで通常のYouTube動画ページを開きます。
-4. 作成したブックマークを実行します。
-5. 「カメラを許可して開始」を押します。
+## Safariへの登録
 
-### iOSショートカット
+1. Safariで任意のページをブックマークします。
+2. `main`ブランチの`bookmarklet.txt`を開き、1行すべてをコピーします。
+3. 作成したブックマークを編集し、URL欄をコピーした内容へ置き換えます。
+4. Safariで通常のYouTube動画ページを開きます。
+5. 作成したブックマークを実行します。
+6. Pinstarの「カメラを許可して開始」を押します。
 
-1. ショートカットで「WebページでJavaScriptを実行」を追加します。
-2. `shortcut-loader.js`の内容を貼り付けます。
-3. 共有シートへ表示し、入力を「SafariのWebページ」に限定します。
-4. 設定で「スクリプトの実行を許可」を有効にします。
-5. YouTube動画ページの共有シートから実行します。
+## 動作方式
+
+YouTube動画そのものや音声URLは取得しません。Safariで正常に再生できているYouTubeページの上へ、`getUserMedia({ video: ..., audio: false })`で取得したカメラ映像を重ねます。
+
+完成動画はiPhone標準の画面収録で保存します。画面収録のマイクをオフにすることで、周囲の音を追加しません。
 
 ## 録画
 
@@ -64,12 +64,21 @@ https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js
 
 ブラウザーのJavaScriptからiOS標準の画面収録を開始・停止することはできません。
 
-## 開発
+## ビルド
+
+`main`へpushするとGitHub Actionsが次の処理を行います。
+
+1. TypeScriptのコンパイル確認
+2. Bunによる単一IIFEファイルの生成
+3. テスト
+4. `js`ブランチを`pinstar.js`だけの状態へforce-push
+
+ローカルでは次を実行します。
 
 ```bash
 bun run check
-bun test
 bun run build
+bun test
 ```
 
-React、Tailwind、フロントエンドフレームワークは使用していません。TypeScriptを単一のIIFE形式へコンパイルします。
+React、Tailwind、フロントエンドフレームワークは使用していません。UI、CSS、操作処理はすべて`src/index.ts`から`pinstar.js`へまとめてコンパイルします。
