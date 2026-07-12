@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 
 describe("published files", () => {
   test("browser bundle is self-contained", async () => {
@@ -9,20 +9,20 @@ describe("published files", () => {
     expect(bundle).not.toMatch(/\bimport\s/);
   });
 
-  test("remote and inline bookmarklets are generated", async () => {
+  test("bookmarklet uses only GitHub raw", async () => {
     const remote = await readFile("dist/bookmarklet.txt", "utf8");
-    const inline = await readFile("dist/bookmarklet-inline.txt", "utf8");
     expect(remote.startsWith("javascript:")).toBe(true);
     expect(remote).toContain("raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js");
     expect(remote).toContain("Pinstarを読み込んでいます");
-    expect(remote).toContain("bookmarklet-inline.txt");
-    expect(inline.startsWith("javascript:")).toBe(true);
-    expect(inline.length).toBeGreaterThan(5_000);
+    expect(remote).not.toContain("jsdelivr");
+    expect(remote).not.toContain("bookmarklet-inline");
+    await expect(access("dist/bookmarklet-inline.txt")).rejects.toThrow();
   });
 
   test("shortcut loader calls completion", async () => {
     const loader = await readFile("dist/shortcut-loader.js", "utf8");
     expect(loader).toContain("completion(");
     expect(loader).toContain("Pinstarの読み込みに失敗しました");
+    expect(loader).not.toContain("jsdelivr");
   });
 });
