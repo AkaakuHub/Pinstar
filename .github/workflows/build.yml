@@ -1,0 +1,55 @@
+name: Build and publish JavaScript
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pinstar-js-branch
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Compile-check TypeScript
+        run: bun run check
+
+      - name: Build browser bundle
+        run: bun run build
+
+      - name: Test generated files
+        run: bun test
+
+      - name: Publish js branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          publish_dir="$(mktemp -d)"
+          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$publish_dir"
+          cd "$publish_dir"
+          if git show-ref --verify --quiet refs/remotes/origin/js; then
+            git checkout --quiet -B js origin/js
+          else
+            git checkout --quiet --orphan js
+          fi
+          git rm -rf . >/dev/null 2>&1 || true
+          cp -R "${GITHUB_WORKSPACE}/dist/." .
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit --quiet -m "build: ${GITHUB_SHA}"
+          git push --quiet --force origin js
