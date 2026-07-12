@@ -26,16 +26,17 @@ Appleは、画面収録で画面と音を記録できる一方、一部のアプ
 生成物:
 
 - `pinstar.js`: 実行本体
-- `bookmarklet.txt`: GitHub上の最新版を読み込むブックマークレット
-- `bookmarklet-inline.txt`: 外部読込を使わない単体版
+- `bookmarklet.txt`: GitHub raw上の`pinstar.js`を読み込むブックマークレット
 - `shortcut-loader.js`: iOSショートカットの「WebページでJavaScriptを実行」用
 - `index.html`: コピー用ページ
 
-最新版の本体URL:
+本体URL:
 
 ```text
 https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js
 ```
+
+ローダーはこのGitHub raw URLだけを使用します。CDN、インライン版、別URLへの切り替えは行いません。読み込みに失敗した場合は、そのエラーをYouTubeページ上へ表示して終了します。
 
 ### Safariブックマークレット
 
@@ -44,10 +45,6 @@ https://raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js
 3. Safariで通常のYouTube動画ページを開きます。
 4. 作成したブックマークを実行します。
 5. 「カメラを許可して開始」を押します。
-
-ブックマークレットの実行直後に、YouTubeページ上へ読み込み状態を表示します。GitHub rawから取得できない場合はjsDelivrへ自動的に切り替えます。両方とも失敗した場合は、その理由と`bookmarklet-inline.txt`を使用する案内を赤いエラー表示で残します。
-
-`bookmarklet-inline.txt`は外部JavaScriptを読み込みません。その代わり、Pinstarを更新した後はブックマークのURLを新しい内容へ置き換える必要があります。
 
 ### iOSショートカット
 
