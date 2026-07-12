@@ -4,8 +4,13 @@ import { readFile, readdir } from "node:fs/promises";
 describe("published files", () => {
   test("browser bundle is self-contained", async () => {
     const bundle = await readFile("dist/pinstar.js", "utf8");
-    expect(bundle.length).toBeGreaterThan(5_000);
+    expect(bundle.length).toBeGreaterThan(10_000);
     expect(bundle).toContain("Pinstar");
+    expect(bundle).toContain("MediaRecorder");
+    expect(bundle).toContain("captureStream");
+    expect(bundle).toContain("createMediaStreamDestination");
+    expect(bundle).toContain("navigator.share");
+    expect(bundle).toContain("localStorage");
     expect(bundle).not.toMatch(/\bimport\s/);
   });
 
