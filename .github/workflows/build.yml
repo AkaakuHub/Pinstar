@@ -41,15 +41,11 @@ jobs:
           publish_dir="$(mktemp -d)"
           git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$publish_dir"
           cd "$publish_dir"
-          if git show-ref --verify --quiet refs/remotes/origin/js; then
-            git checkout --quiet -B js origin/js
-          else
-            git checkout --quiet --orphan js
-          fi
+          git checkout --quiet --orphan js-publish
           git rm -rf . >/dev/null 2>&1 || true
           cp "${GITHUB_WORKSPACE}/dist/pinstar.js" ./pinstar.js
-          git add -A
+          git add pinstar.js
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit --quiet -m "build: ${GITHUB_SHA}"
-          git push --quiet --force origin js
+          git push --quiet --force origin HEAD:js
