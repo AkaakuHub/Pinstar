@@ -1,4 +1,4 @@
-export const VERSION = "0.4.0";
+export const VERSION = "0.5.0";
 export const ROOT_ID = "pinstar-root";
 export const CAMERA_STORAGE_KEY = "pinstar.camera.deviceId";
 export const COUNTDOWN_STORAGE_KEY = "pinstar.record.countdown";
