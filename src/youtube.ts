@@ -54,13 +54,17 @@ export class YouTubeController {
     if (typeof video.captureStream !== "function") {
       throw new Error("このSafariではHTMLMediaElement.captureStream()を使用できません。");
     }
+
     const stream = video.captureStream();
     const audioTrack = stream.getAudioTracks()[0];
     if (!audioTrack) {
       stream.getTracks().forEach((track) => track.stop());
       throw new Error("YouTubeの再生音声トラックを取得できませんでした。");
     }
-    return audioTrack.clone();
+
+    const clone = audioTrack.clone();
+    stream.getTracks().forEach((track) => track.stop());
+    return clone;
   }
 
   setupDoubleTap(element: HTMLElement, seconds: number, onSeek: () => void): () => void {
