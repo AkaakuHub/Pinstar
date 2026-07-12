@@ -3,8 +3,6 @@ name: Build and publish JavaScript
 on:
   push:
     branches: [main]
-  issues:
-    types: [opened]
   workflow_dispatch:
 
 permissions:
@@ -28,61 +26,29 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Apply recorder UI migration
-        id: migration
-        shell: bash
-        run: |
-          set +e
-          bun run scripts/apply-recorder-ui-v3.ts > patch-recorder.log 2>&1
-          status=$?
-          cat patch-recorder.log
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
+      - name: Type-check
+        run: bun run check
 
-      - name: Commit migration or diagnostic
+      - name: Test
+        run: bun test
+
+      - name: Build complete browser bundle
+        run: bun run build
+
+      - name: Publish pinstar.js to js branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git add src/index.ts patch-recorder.log
+          git fetch origin js
+          git worktree add --force publish js
+          cp dist/pinstar.js publish/pinstar.js
+          cd publish
+          git add pinstar.js
           if git diff --cached --quiet; then
             exit 0
           fi
-          message="fix: unify recording control and timer"
-          if [ "${{ steps.migration.outputs.status }}" != "0" ]; then
-            message="chore: record recorder migration failure"
-          fi
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "$message"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
-
-      - name: Stop if migration failed
-        if: steps.migration.outputs.status != '0'
-        run: exit 1
-
-      - name: Compile-check TypeScript
-        run: bun run check
-
-      - name: Build browser bundle
-        run: bun run build
-
-      - name: Test generated files
-        run: bun test
-
-      - name: Publish only pinstar.js
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          publish_dir="$(mktemp -d)"
-          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$publish_dir"
-          cd "$publish_dir"
-          git checkout --quiet --orphan js-publish
-          git rm -rf . >/dev/null 2>&1 || true
-          cp "${GITHUB_WORKSPACE}/dist/pinstar.js" ./pinstar.js
-          git add pinstar.js
-          git -c user.name="github-actions[bot]" \
-              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit --quiet -m "build: ${GITHUB_SHA}"
-          git push --quiet --force origin HEAD:js
+              commit -m "build: ${GITHUB_SHA}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" js
