@@ -18,11 +18,30 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Apply recorder UI migration
+        run: bun run scripts/apply-recorder-ui-v3.ts
+
+      - name: Commit migrated source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src/index.ts; then
+            exit 0
+          fi
+          git add src/index.ts
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "fix: unify recording control and timer"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
 
       - name: Compile-check TypeScript
         run: bun run check
