@@ -116,7 +116,7 @@ replaceRequired(
     #countdown-select, #share { width: 58px; min-width: 58px; height: 28px; }
     #tap-layer { top: 46px; bottom: 72px; }
   }
-`;,
+`,
   "responsive CSS",
 );
 
