@@ -473,6 +473,7 @@ const start = (): RuntimeHandle => {
   let recordingStartedAt = 0;
   let lastFile: File | null = null;
   let activeAudioBridge: AudioBridge | null = null;
+  let activeAudioVideo: HTMLVideoElement | null = null;
 
   const savedCountdown = storageGet(COUNTDOWN_STORAGE_KEY);
   if (["3", "5", "10"].includes(savedCountdown)) countdownSelect.value = savedCountdown;
@@ -818,7 +819,9 @@ const start = (): RuntimeHandle => {
       throw new Error("このSafariはMP4録画に対応していません。");
     }
 
-    activeAudioBridge = await getAudioBridge(video);
+    if (!activeAudioBridge || activeAudioVideo !== video) {
+      throw new Error("YouTube音声の録画経路が準備されていません。録画を押し直してください。");
+    }
     configureCanvas();
     const canvasStream = recordCanvas.captureStream(30);
     const videoTrack = canvasStream.getVideoTracks()[0];
@@ -860,6 +863,14 @@ const start = (): RuntimeHandle => {
     const video = requireYouTubeVideo();
     if (!video || !cameraReady) {
       showToast("カメラとYouTubeを準備してください");
+      return;
+    }
+    try {
+      activeAudioBridge = await getAudioBridge(video);
+      activeAudioVideo = video;
+    } catch (error) {
+      log("error", "YouTube音声を録画用に準備できませんでした。", error);
+      showToast("音声準備失敗", 1800);
       return;
     }
     const seconds = Number(countdownSelect.value);
