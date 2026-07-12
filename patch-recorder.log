@@ -1,0 +1,11 @@
+119 | `;,
+       ^
+error: Expected ")" but found ";"
+    at /home/runner/work/Pinstar/Pinstar/scripts/apply-recorder-ui-v3.ts:119:2
+
+121 | );
+      ^
+error: Unexpected )
+    at /home/runner/work/Pinstar/Pinstar/scripts/apply-recorder-ui-v3.ts:121:1
+
+Bun v1.3.14 (Linux x64)
