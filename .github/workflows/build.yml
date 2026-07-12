@@ -44,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin js
-          git worktree add --force publish js
+          git worktree add --force -B js publish origin/js
           cp dist/pinstar.js publish/pinstar.js
           cd publish
           git add pinstar.js
