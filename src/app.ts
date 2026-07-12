@@ -1,5 +1,6 @@
 import { UI_TICK_MS, VERSION, YOUTUBE_POLL_MS } from "./config";
 import { CameraManager } from "./camera";
+import { DisplayAudioCapture } from "./display-audio";
 import { RecordingSession } from "./recorder";
 import { loadSettings, saveCountdownSeconds } from "./storage";
 import type { CountdownSeconds, LogEntry, LogLevel, RecorderState } from "./types";
@@ -11,6 +12,7 @@ export class PinstarApp {
   private readonly view: View = createView();
   private readonly youtube = new YouTubeController();
   private readonly camera = new CameraManager(this.view.camera);
+  private readonly displayAudio = new DisplayAudioCapture();
   private readonly recorder = new RecordingSession();
   private readonly logs: LogEntry[] = [];
   private readonly cleanup: Array<() => void> = [];
@@ -59,6 +61,7 @@ export class PinstarApp {
     }
     this.destroyed = true;
     this.camera.stop();
+    this.displayAudio.stop();
     this.recorder.cancel();
     window.clearInterval(this.youtubePoll);
     window.clearInterval(this.uiTimer);
@@ -235,10 +238,12 @@ export class PinstarApp {
 
     let audioTrack: MediaStreamTrack;
     try {
-      audioTrack = this.youtube.captureAudioTrack();
+      this.log("info", "画面・タブ音声共有の許可を要求しています。");
+      audioTrack = await this.displayAudio.requestAudioTrack();
+      this.log("info", "共有音声トラックを取得しました。", audioTrack.label || "display audio");
     } catch (error) {
-      this.log("error", "YouTube音声を取得できませんでした。", error);
-      this.showToast("YouTube音声を取得できません", 2200);
+      this.log("error", "共有音声を取得できませんでした。", error);
+      this.showToast("音声共有を許可できません", 2200);
       return;
     }
 
@@ -257,6 +262,7 @@ export class PinstarApp {
       for (let remaining = seconds; remaining > 0; remaining -= 1) {
         if (token !== this.countdownToken) {
           audioTrack.stop();
+          this.displayAudio.stop();
           return;
         }
         this.view.countdownNumber.textContent = String(remaining);
@@ -264,10 +270,17 @@ export class PinstarApp {
       }
       if (token !== this.countdownToken) {
         audioTrack.stop();
+        this.displayAudio.stop();
         return;
+      }
+      if (audioTrack.readyState !== "live") {
+        throw new Error("録画開始前に共有音声トラックが終了しました。");
       }
 
       const videoTrack = this.camera.cloneVideoTrack();
+      audioTrack.addEventListener("ended", () => {
+        if (this.recorderState === "recording") void this.stopRecording();
+      }, { once: true });
       this.recorder.start(videoTrack, audioTrack);
       this.recorderState = "recording";
       this.view.recordButton.classList.remove("countdown");
@@ -277,10 +290,11 @@ export class PinstarApp {
       this.view.countdownOverlay.classList.add("hidden");
       this.lastFile = null;
       this.view.shareButton.disabled = true;
-      this.log("info", "録画を開始しました。音声入力はYouTubeのcaptureStreamです。");
+      this.log("info", "録画を開始しました。音声入力は許可された画面・タブ共有です。");
       this.showToast("録画開始");
     } catch (error) {
       audioTrack.stop();
+      this.displayAudio.stop();
       this.log("error", "録画を開始できませんでした。", error);
       this.showToast("録画開始失敗", 2000);
       this.resetRecorderUi();
@@ -290,6 +304,7 @@ export class PinstarApp {
 
   private cancelCountdown(): void {
     this.countdownToken += 1;
+    this.displayAudio.stop();
     this.recorderState = "idle";
     this.view.countdownOverlay.classList.add("hidden");
     this.resetRecorderUi();
@@ -319,6 +334,7 @@ export class PinstarApp {
       this.log("error", "録画を終了できませんでした。", error);
       this.showToast("録画終了失敗", 1800);
     } finally {
+      this.displayAudio.stop();
       this.recorderState = "idle";
       this.resetRecorderUi();
       this.renderStatus();
