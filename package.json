@@ -1,0 +1,11 @@
+{
+  "name": "pinstar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "check": "bun build src/index.ts --target=browser --format=iife --outfile=/tmp/pinstar-check.js",
+    "test": "bun test"
+  }
+}
