@@ -5,9 +5,7 @@ const sourceFiles = [
   "src/index.ts",
   "src/app.ts",
   "src/camera.ts",
-  "src/display-audio.ts",
   "src/youtube.ts",
-  "src/recorder.ts",
   "src/storage.ts",
   "src/config.ts",
   "src/types.ts",
@@ -19,12 +17,13 @@ const sourceFiles = [
 describe("Pinstar build", () => {
   test("browser bundle is self-contained", async () => {
     const bundle = await readFile("dist/pinstar.js", "utf8");
-    expect(bundle.length).toBeGreaterThan(8_000);
+    expect(bundle.length).toBeGreaterThan(4_000);
     expect(bundle).toContain("Pinstar");
-    expect(bundle).toContain("MediaRecorder");
-    expect(bundle).toContain("getDisplayMedia");
-    expect(bundle).toContain("navigator.share");
+    expect(bundle).toContain("ui-hidden");
     expect(bundle).toContain("localStorage");
+    expect(bundle).not.toContain("MediaRecorder");
+    expect(bundle).not.toContain("getDisplayMedia");
+    expect(bundle).not.toContain("navigator.share");
     expect(bundle).not.toContain("createMediaStreamDestination");
     expect(bundle).not.toContain("captureStream");
     expect(bundle).not.toContain("jsdelivr");
@@ -39,6 +38,8 @@ describe("Pinstar build", () => {
     for (const path of sourceFiles) await access(path);
     const entry = await readFile("src/index.ts", "utf8");
     expect(entry.split("\n").length).toBeLessThan(40);
+    await expect(access("src/display-audio.ts")).rejects.toThrow();
+    await expect(access("src/recorder.ts")).rejects.toThrow();
   });
 
   test("bookmarklet is fixed directly in README", async () => {

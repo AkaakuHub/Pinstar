@@ -32,6 +32,7 @@ export const styles = String.raw`
     inset: 0;
     pointer-events: none;
     background: linear-gradient(180deg, rgba(0,0,0,.55), transparent 24%, transparent 65%, rgba(0,0,0,.72));
+    transition: opacity .16s ease;
   }
 
   #tap-layer {
@@ -63,6 +64,7 @@ export const styles = String.raw`
     gap: 6px;
     align-items: center;
     min-width: 0;
+    transition: opacity .16s ease;
   }
 
   .glass {
@@ -97,8 +99,7 @@ export const styles = String.raw`
   #status-dot.error { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255,59,48,.2); }
   #status-text { overflow: hidden; text-overflow: ellipsis; }
 
-  #camera-select,
-  #countdown-select {
+  #camera-select {
     min-width: 0;
     height: 38px;
     padding: 0 28px 0 10px;
@@ -109,8 +110,7 @@ export const styles = String.raw`
   }
 
   .icon-button,
-  .control-button,
-  #share {
+  .control-button {
     height: 38px;
     border-radius: 12px;
     color: #fff;
@@ -151,7 +151,7 @@ export const styles = String.raw`
     position: absolute;
     z-index: 5;
     left: max(8px, env(safe-area-inset-left));
-    right: max(96px, calc(env(safe-area-inset-right) + 90px));
+    right: max(8px, env(safe-area-inset-right));
     bottom: max(8px, env(safe-area-inset-bottom));
     display: grid;
     grid-template-columns: auto auto auto minmax(72px, 1fr) auto;
@@ -160,100 +160,20 @@ export const styles = String.raw`
     min-width: 0;
     padding: 7px;
     border-radius: 16px;
+    transition: opacity .16s ease;
   }
   #seek { width: 100%; min-width: 0; accent-color: #fff; }
   #clock { min-width: 82px; font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  #record-dock {
-    position: absolute;
-    z-index: 6;
-    right: max(12px, calc(env(safe-area-inset-right) + 10px));
-    bottom: max(8px, env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-
-  #record-time {
-    display: none;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(0,0,0,.62);
-    font-size: 14px;
-    font-weight: 750;
-    font-variant-numeric: tabular-nums;
-  }
-  #record-time.visible { display: flex; }
-  #record-time::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #ff3b30;
-  }
-
-  #record {
-    width: 68px;
-    height: 68px;
-    padding: 5px;
-    border: 4px solid rgba(255,255,255,.96);
-    border-radius: 50%;
-    background: rgba(0,0,0,.22);
-    box-shadow: 0 10px 32px rgba(0,0,0,.32);
-  }
-  #record::before {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: #ff3b30;
-    transition: .16s ease;
-  }
-  #record.recording::before {
-    width: 52%;
-    height: 52%;
-    margin: 24%;
-    border-radius: 6px;
-  }
-  #record.countdown::before { animation: pulse .75s infinite alternate; }
-  @keyframes pulse { to { opacity: .6; transform: scale(.82); } }
-
-  #countdown-select,
-  #share {
-    width: 68px;
-    min-width: 68px;
-    height: 31px;
-    border-radius: 999px;
-    font-size: 11px;
-  }
-  #countdown-select { padding: 0 21px 0 8px; }
-  #share { padding: 0 7px; }
-
-  #countdown-overlay {
-    position: absolute;
-    z-index: 10;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: rgba(0,0,0,.24);
+  #app.ui-hidden #shade,
+  #app.ui-hidden #topbar,
+  #app.ui-hidden #center-card,
+  #app.ui-hidden #playback-controls {
+    opacity: 0;
     pointer-events: none;
   }
-  #countdown-overlay.hidden { display: none; }
-  #countdown-number {
-    min-width: 110px;
-    padding: 16px 24px;
-    border-radius: 24px;
-    background: rgba(0,0,0,.68);
-    font-size: clamp(58px, 18vw, 110px);
-    font-weight: 850;
-    line-height: 1;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
+
+  #app.ui-hidden #tap-layer { inset: 0; }
 
   #toast {
     position: absolute;
@@ -302,15 +222,12 @@ export const styles = String.raw`
     #topbar { grid-template-columns: auto minmax(64px, 1fr) auto auto auto; }
     #status-text { display: none; }
     #playback-controls {
-      right: max(84px, calc(env(safe-area-inset-right) + 78px));
+      right: max(8px, env(safe-area-inset-right));
       grid-template-columns: 40px 52px 40px minmax(45px, 1fr);
       padding: 6px;
     }
     #clock { display: none; }
-    #record-dock { right: max(8px, calc(env(safe-area-inset-right) + 6px)); }
-    #record { width: 62px; height: 62px; }
-    #countdown-select, #share { width: 62px; min-width: 62px; }
-    #tap-layer { bottom: 86px; }
+    #tap-layer { bottom: 68px; }
   }
 
   @media (max-width: 430px) {

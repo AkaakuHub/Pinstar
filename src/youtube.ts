@@ -45,22 +45,36 @@ export class YouTubeController {
     video.currentTime = Math.max(0, Math.min(1, fraction)) * video.duration;
   }
 
-  setupDoubleTap(element: HTMLElement, seconds: number, onSeek: () => void): () => void {
+  setupTapGestures(
+    element: HTMLElement,
+    seconds: number,
+    onSingleTap: () => void,
+    onSeek: () => void,
+  ): () => void {
     let lastTap = 0;
+    let singleTapTimer = 0;
     const listener = (event: PointerEvent): void => {
       event.preventDefault();
       event.stopPropagation();
       const now = performance.now();
       if (now - lastTap <= DOUBLE_TAP_MS) {
+        window.clearTimeout(singleTapTimer);
         lastTap = 0;
         this.seekBy(seconds);
         onSeek();
       } else {
         lastTap = now;
+        singleTapTimer = window.setTimeout(() => {
+          lastTap = 0;
+          onSingleTap();
+        }, DOUBLE_TAP_MS);
       }
     };
     element.addEventListener("pointerup", listener);
-    return () => element.removeEventListener("pointerup", listener);
+    return () => {
+      window.clearTimeout(singleTapTimer);
+      element.removeEventListener("pointerup", listener);
+    };
   }
 
   private requireVideo(): HTMLVideoElement {

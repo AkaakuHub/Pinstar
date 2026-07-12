@@ -55,12 +55,6 @@ export class CameraManager {
     this.preview.srcObject = null;
   }
 
-  cloneVideoTrack(): MediaStreamTrack {
-    const track = this.stream?.getVideoTracks()[0];
-    if (!track) throw new Error("カメラ映像トラックがありません。");
-    return track.clone();
-  }
-
   async refreshDevices(): Promise<MediaDeviceInfo[]> {
     const all = await navigator.mediaDevices.enumerateDevices();
     this.devices = all.filter((device) => device.kind === "videoinput");

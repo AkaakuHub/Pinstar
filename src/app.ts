@@ -1,10 +1,8 @@
 import { UI_TICK_MS, VERSION, YOUTUBE_POLL_MS } from "./config";
 import { CameraManager } from "./camera";
-import { DisplayAudioCapture } from "./display-audio";
-import { RecordingSession } from "./recorder";
-import { loadSettings, saveCountdownSeconds } from "./storage";
-import type { CountdownSeconds, LogEntry, LogLevel, RecorderState } from "./types";
-import { describeError, formatTime, sleep } from "./utils";
+import { loadSettings } from "./storage";
+import type { LogEntry, LogLevel } from "./types";
+import { describeError, formatTime } from "./utils";
 import { createView, type View } from "./ui/view";
 import { YouTubeController } from "./youtube";
 
@@ -12,15 +10,10 @@ export class PinstarApp {
   private readonly view: View = createView();
   private readonly youtube = new YouTubeController();
   private readonly camera = new CameraManager(this.view.camera);
-  private readonly displayAudio = new DisplayAudioCapture();
-  private readonly recorder = new RecordingSession();
   private readonly logs: LogEntry[] = [];
   private readonly cleanup: Array<() => void> = [];
   private readonly settings = loadSettings();
 
-  private recorderState: RecorderState = "idle";
-  private lastFile: File | null = null;
-  private countdownToken = 0;
   private toastTimer = 0;
   private youtubePoll = 0;
   private uiTimer = 0;
@@ -33,7 +26,6 @@ export class PinstarApp {
     document.documentElement.style.overflow = "hidden";
     if (document.body) document.body.style.overflow = "hidden";
 
-    this.view.countdownSelect.value = String(this.settings.countdownSeconds);
     this.syncViewport();
     this.bindEvents();
     this.refreshYouTube();
@@ -42,10 +34,7 @@ export class PinstarApp {
     this.renderLogs();
 
     this.youtubePoll = window.setInterval(() => this.refreshYouTube(), YOUTUBE_POLL_MS);
-    this.uiTimer = window.setInterval(() => {
-      this.renderPlayback();
-      this.renderRecordingTime();
-    }, UI_TICK_MS);
+    this.uiTimer = window.setInterval(() => this.renderPlayback(), UI_TICK_MS);
 
     this.log("info", `Pinstar v${VERSION}を開始しました。`, location.href);
     if (!/^(www\.|m\.)?youtube\.com$/i.test(location.hostname)) {
@@ -55,14 +44,8 @@ export class PinstarApp {
 
   destroy(): void {
     if (this.destroyed) return;
-    if (this.recorderState !== "idle") {
-      this.showToast("録画を終了してから閉じてください");
-      return;
-    }
     this.destroyed = true;
     this.camera.stop();
-    this.displayAudio.stop();
-    this.recorder.cancel();
     window.clearInterval(this.youtubePoll);
     window.clearInterval(this.uiTimer);
     window.clearTimeout(this.toastTimer);
@@ -96,15 +79,18 @@ export class PinstarApp {
       this.youtube.seekToFraction(Number(this.view.seek.value) / 1000);
     });
 
-    this.cleanup.push(this.youtube.setupDoubleTap(this.view.tapLeft, -5, () => this.showToast("5秒戻る")));
-    this.cleanup.push(this.youtube.setupDoubleTap(this.view.tapRight, 5, () => this.showToast("5秒進む")));
-
-    this.bind(this.view.countdownSelect, "change", () => {
-      const seconds = Number(this.view.countdownSelect.value) as CountdownSeconds;
-      saveCountdownSeconds(seconds);
-    });
-    this.bind(this.view.recordButton, "click", () => void this.handleRecordButton());
-    this.bind(this.view.shareButton, "click", () => void this.shareRecording());
+    this.cleanup.push(this.youtube.setupTapGestures(
+      this.view.tapLeft,
+      -5,
+      () => this.toggleUi(),
+      () => this.showToast("5秒戻る"),
+    ));
+    this.cleanup.push(this.youtube.setupTapGestures(
+      this.view.tapRight,
+      5,
+      () => this.toggleUi(),
+      () => this.showToast("5秒進む"),
+    ));
   }
 
   private bind<T extends EventTarget>(
@@ -138,10 +124,6 @@ export class PinstarApp {
   }
 
   private async startCamera(deviceId?: string): Promise<void> {
-    if (this.recorderState !== "idle") {
-      this.showToast("録画中はカメラを変更できません");
-      return;
-    }
     try {
       this.log("info", "カメラ権限を要求しています。");
       await this.camera.start(deviceId);
@@ -170,7 +152,6 @@ export class PinstarApp {
   }
 
   private async switchCamera(): Promise<void> {
-    if (this.recorderState !== "idle") return;
     try {
       await this.camera.switchToNext();
       await this.populateCameraSelect();
@@ -217,165 +198,8 @@ export class PinstarApp {
     this.view.clock.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
   }
 
-  private async handleRecordButton(): Promise<void> {
-    if (this.recorderState === "recording") {
-      await this.stopRecording();
-      return;
-    }
-    if (this.recorderState === "countdown") {
-      this.cancelCountdown();
-      return;
-    }
-    if (this.recorderState === "encoding") return;
-    await this.startCountdown();
-  }
-
-  private async startCountdown(): Promise<void> {
-    if (!this.camera.ready || !this.youtube.current) {
-      this.showToast("カメラとYouTubeを準備してください");
-      return;
-    }
-
-    let audioTrack: MediaStreamTrack;
-    try {
-      this.log("info", "画面・タブ音声共有の許可を要求しています。");
-      audioTrack = await this.displayAudio.requestAudioTrack();
-      this.log("info", "共有音声トラックを取得しました。", audioTrack.label || "display audio");
-    } catch (error) {
-      this.log("error", "共有音声を取得できませんでした。", error);
-      this.showToast("音声共有を許可できません", 2200);
-      return;
-    }
-
-    const seconds = Number(this.view.countdownSelect.value) as CountdownSeconds;
-    saveCountdownSeconds(seconds);
-    this.recorderState = "countdown";
-    this.view.recordButton.classList.add("countdown");
-    this.view.countdownSelect.disabled = true;
-    this.view.cameraSelect.disabled = true;
-    this.view.switchCamera.disabled = true;
-    this.view.countdownOverlay.classList.remove("hidden");
-    this.renderStatus();
-
-    const token = ++this.countdownToken;
-    try {
-      for (let remaining = seconds; remaining > 0; remaining -= 1) {
-        if (token !== this.countdownToken) {
-          audioTrack.stop();
-          this.displayAudio.stop();
-          return;
-        }
-        this.view.countdownNumber.textContent = String(remaining);
-        await sleep(1000);
-      }
-      if (token !== this.countdownToken) {
-        audioTrack.stop();
-        this.displayAudio.stop();
-        return;
-      }
-      if (audioTrack.readyState !== "live") {
-        throw new Error("録画開始前に共有音声トラックが終了しました。");
-      }
-
-      const videoTrack = this.camera.cloneVideoTrack();
-      audioTrack.addEventListener("ended", () => {
-        if (this.recorderState === "recording") void this.stopRecording();
-      }, { once: true });
-      this.recorder.start(videoTrack, audioTrack);
-      this.recorderState = "recording";
-      this.view.recordButton.classList.remove("countdown");
-      this.view.recordButton.classList.add("recording");
-      this.view.recordButton.setAttribute("aria-label", "録画終了");
-      this.view.recordTime.classList.add("visible");
-      this.view.countdownOverlay.classList.add("hidden");
-      this.lastFile = null;
-      this.view.shareButton.disabled = true;
-      this.log("info", "録画を開始しました。音声入力は許可された画面・タブ共有です。");
-      this.showToast("録画開始");
-    } catch (error) {
-      audioTrack.stop();
-      this.displayAudio.stop();
-      this.log("error", "録画を開始できませんでした。", error);
-      this.showToast("録画開始失敗", 2000);
-      this.resetRecorderUi();
-    }
-    this.renderStatus();
-  }
-
-  private cancelCountdown(): void {
-    this.countdownToken += 1;
-    this.displayAudio.stop();
-    this.recorderState = "idle";
-    this.view.countdownOverlay.classList.add("hidden");
-    this.resetRecorderUi();
-    this.renderStatus();
-    this.showToast("録画をキャンセルしました");
-  }
-
-  private async stopRecording(): Promise<void> {
-    this.recorderState = "encoding";
-    this.view.recordButton.disabled = true;
-    this.view.recordButton.classList.remove("recording");
-    this.view.recordButton.setAttribute("aria-label", "エンコード中");
-    this.renderStatus();
-    this.showToast("エンコード中…", 1800);
-
-    try {
-      const result = await this.recorder.stop();
-      this.lastFile = result.file;
-      this.view.shareButton.disabled = false;
-      this.log(
-        "info",
-        "MP4の生成が完了しました。",
-        `${(result.file.size / 1024 / 1024).toFixed(1)} MB / ${formatTime(result.durationSeconds)}`,
-      );
-      this.showToast("録画を共有できます", 1800);
-    } catch (error) {
-      this.log("error", "録画を終了できませんでした。", error);
-      this.showToast("録画終了失敗", 1800);
-    } finally {
-      this.displayAudio.stop();
-      this.recorderState = "idle";
-      this.resetRecorderUi();
-      this.renderStatus();
-    }
-  }
-
-  private resetRecorderUi(): void {
-    this.view.recordButton.disabled = false;
-    this.view.recordButton.classList.remove("recording", "countdown");
-    this.view.recordButton.setAttribute("aria-label", "録画開始");
-    this.view.recordTime.classList.remove("visible");
-    this.view.recordTime.textContent = "00:00";
-    this.view.countdownSelect.disabled = false;
-    this.view.cameraSelect.disabled = false;
-    this.view.switchCamera.disabled = false;
-  }
-
-  private renderRecordingTime(): void {
-    if (this.recorderState !== "recording") return;
-    this.view.recordTime.textContent = formatTime(this.recorder.elapsedSeconds);
-  }
-
-  private async shareRecording(): Promise<void> {
-    const file = this.lastFile;
-    if (!file) {
-      this.showToast("共有する録画がありません");
-      return;
-    }
-    if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
-      this.log("error", "このSafariではMP4ファイル共有を使用できません。");
-      this.showToast("ファイル共有非対応");
-      return;
-    }
-    try {
-      await navigator.share({ files: [file], title: "Pinstar録画" });
-      this.log("info", "共有シートへ録画を渡しました。", file.name);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      this.log("error", "録画を共有できませんでした。", error);
-      this.showToast("共有失敗");
-    }
+  private toggleUi(): void {
+    this.view.app.classList.toggle("ui-hidden");
   }
 
   private renderStatus(): void {
@@ -384,10 +208,7 @@ export class PinstarApp {
     if (this.logs.some((entry) => entry.level === "error")) this.view.statusDot.classList.add("error");
     else if (youtubeReady && this.camera.ready) this.view.statusDot.classList.add("ready");
 
-    if (this.recorderState === "recording") this.view.statusText.textContent = "録画中";
-    else if (this.recorderState === "countdown") this.view.statusText.textContent = "待機中";
-    else if (this.recorderState === "encoding") this.view.statusText.textContent = "処理中";
-    else if (!youtubeReady) this.view.statusText.textContent = "YouTube待機";
+    if (!youtubeReady) this.view.statusText.textContent = "YouTube待機";
     else if (!this.camera.ready) this.view.statusText.textContent = "カメラ待機";
     else this.view.statusText.textContent = "準備完了";
   }

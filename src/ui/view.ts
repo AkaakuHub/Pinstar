@@ -21,12 +21,6 @@ export type View = {
   forward: HTMLButtonElement;
   seek: HTMLInputElement;
   clock: HTMLSpanElement;
-  recordButton: HTMLButtonElement;
-  recordTime: HTMLSpanElement;
-  countdownSelect: HTMLSelectElement;
-  shareButton: HTMLButtonElement;
-  countdownOverlay: HTMLDivElement;
-  countdownNumber: HTMLDivElement;
   toast: HTMLDivElement;
   logModal: HTMLDivElement;
   logList: HTMLDivElement;
@@ -74,7 +68,7 @@ export const createView = (): View => {
   camera.muted = true;
   app.append(camera, element("div", { id: "shade" }));
 
-  const tapLayer = element("div", { id: "tap-layer", "aria-label": "左右をダブルタップして5秒移動" });
+  const tapLayer = element("div", { id: "tap-layer", "aria-label": "タップでUI表示切替、左右をダブルタップして5秒移動" });
   const tapLeft = element("div", { id: "tap-left", class: "tap-zone" });
   const tapRight = element("div", { id: "tap-right", class: "tap-zone" });
   tapLayer.append(tapLeft, tapRight);
@@ -97,7 +91,7 @@ export const createView = (): View => {
   const centerCard = element("div", { id: "center-card", class: "glass" });
   centerCard.append(
     element("h1", {}, "カメラを開始"),
-    element("p", {}, "映像にはカメラだけを使用します。録画開始時に画面・タブ音声共有の許可を求め、マイクは使用しません。"),
+    element("p", {}, "カメラ映像を表示します。画面をタップすると操作UIを非表示にできます。"),
   );
   const startCamera = button("start-camera", "カメラを許可して開始", "");
   centerCard.append(startCamera);
@@ -119,25 +113,6 @@ export const createView = (): View => {
   const clock = element("span", { id: "clock" }, "--:-- / --:--");
   playback.append(back, play, forward, seek, clock);
   app.append(playback);
-
-  const recordDock = element("div", { id: "record-dock" });
-  const recordTime = element("span", { id: "record-time" }, "00:00");
-  const recordButton = button("record", "", "", "録画開始");
-  const countdownSelect = element("select", {
-    id: "countdown-select",
-    class: "glass",
-    "aria-label": "録画開始カウントダウン",
-  });
-  countdownSelect.append(new Option("3秒", "3"), new Option("5秒", "5"), new Option("10秒", "10"));
-  const shareButton = button("share", "共有", "glass");
-  shareButton.disabled = true;
-  recordDock.append(recordTime, recordButton, countdownSelect, shareButton);
-  app.append(recordDock);
-
-  const countdownOverlay = element("div", { id: "countdown-overlay", class: "hidden" });
-  const countdownNumber = element("div", { id: "countdown-number" }, "3");
-  countdownOverlay.append(countdownNumber);
-  app.append(countdownOverlay);
 
   const toast = element("div", { id: "toast" });
   app.append(toast);
@@ -176,12 +151,6 @@ export const createView = (): View => {
     forward,
     seek,
     clock,
-    recordButton,
-    recordTime,
-    countdownSelect,
-    shareButton,
-    countdownOverlay,
-    countdownNumber,
     toast,
     logModal,
     logList,

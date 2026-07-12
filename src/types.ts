@@ -12,11 +12,6 @@ export type RuntimeHandle = {
   destroy: () => void;
 };
 
-export type CountdownSeconds = 3 | 5 | 10;
-
 export type PersistedSettings = {
   cameraDeviceId: string;
-  countdownSeconds: CountdownSeconds;
 };
-
-export type RecorderState = "idle" | "countdown" | "recording" | "encoding";
