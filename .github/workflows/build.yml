@@ -33,6 +33,9 @@ jobs:
       - name: Test generated files
         run: bun test
 
+      - name: Inspect mistaken repository refs
+        run: git ls-remote --heads https://github.com/AkaakuHub/akaakuhub.github.io.git > dist/akaakuhub-github-io-refs.txt
+
       - name: Publish js branch
         env:
           GH_TOKEN: ${{ github.token }}
