@@ -5,8 +5,8 @@
 7 |   const next = source.replace(from, to);
 8 |   if (next === source) throw new Error(`patch target not found: ${label}`);
                                      ^
-error: patch target not found: recorder markup
+error: patch target not found: version
       at replaceRequired (/home/runner/work/Pinstar/Pinstar/scripts/apply-recorder-ui-v3.ts:8:34)
-      at /home/runner/work/Pinstar/Pinstar/scripts/apply-recorder-ui-v3.ts:123:1
+      at /home/runner/work/Pinstar/Pinstar/scripts/apply-recorder-ui-v3.ts:12:1
 
 Bun v1.3.14 (Linux x64)
