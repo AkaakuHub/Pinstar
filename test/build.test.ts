@@ -14,6 +14,8 @@ describe("published files", () => {
     const inline = await readFile("dist/bookmarklet-inline.txt", "utf8");
     expect(remote.startsWith("javascript:")).toBe(true);
     expect(remote).toContain("raw.githubusercontent.com/AkaakuHub/Pinstar/js/pinstar.js");
+    expect(remote).toContain("Pinstarを読み込んでいます");
+    expect(remote).toContain("bookmarklet-inline.txt");
     expect(inline.startsWith("javascript:")).toBe(true);
     expect(inline.length).toBeGreaterThan(5_000);
   });
@@ -21,5 +23,6 @@ describe("published files", () => {
   test("shortcut loader calls completion", async () => {
     const loader = await readFile("dist/shortcut-loader.js", "utf8");
     expect(loader).toContain("completion(");
+    expect(loader).toContain("Pinstarの読み込みに失敗しました");
   });
 });
