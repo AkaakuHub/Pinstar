@@ -34,7 +34,7 @@ describe("Pinstar build", () => {
   });
 
   test("source is split by responsibility", async () => {
-    for (const path of sourceFiles) await expect(access(path)).resolves.toBeUndefined();
+    for (const path of sourceFiles) await access(path);
     const entry = await readFile("src/index.ts", "utf8");
     expect(entry.split("\n").length).toBeLessThan(40);
   });
