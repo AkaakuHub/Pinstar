@@ -33,7 +33,7 @@ jobs:
       - name: Test generated files
         run: bun test
 
-      - name: Publish js branch
+      - name: Publish only pinstar.js
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -47,7 +47,7 @@ jobs:
             git checkout --quiet --orphan js
           fi
           git rm -rf . >/dev/null 2>&1 || true
-          cp -R "${GITHUB_WORKSPACE}/dist/." .
+          cp "${GITHUB_WORKSPACE}/dist/pinstar.js" ./pinstar.js
           git add -A
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
