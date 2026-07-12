@@ -1,4 +1,4 @@
-(()=>{var h="0.5.0",y="pinstar-root",T="pinstar.camera.deviceId",S="pinstar.record.countdown",c="video/mp4;codecs=avc1.42E01E,mp4a.40.2",Z=800,ee=200,te=340;var ie=(e)=>{try{return localStorage.getItem(e)??""}catch{return""}},oe=(e,t)=>{try{localStorage.setItem(e,t)}catch{}},ce=(e)=>{if(e==="5")return 5;if(e==="10")return 10;return 3},re=()=>({cameraDeviceId:ie(T),countdownSeconds:ce(ie(S))}),se=(e)=>{oe(T,e)},k=(e)=>{oe(S,String(e))};class E{preview;stream=null;devices=[];selectedDeviceId="";constructor(e){this.preview=e}get ready(){return Boolean(this.stream?.getVideoTracks()[0])}get currentDeviceId(){return this.selectedDeviceId}async start(e){if(!navigator.mediaDevices?.getUserMedia)throw Error("このSafariではカメラAPIを使用できません。");this.stop();let t=e||this.selectedDeviceId,i=t?{deviceId:{exact:t},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:30}}:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:30}};this.stream=await navigator.mediaDevices.getUserMedia({video:i,audio:!1}),this.preview.srcObject=this.stream,await this.preview.play();let o=this.stream.getVideoTracks()[0];if(this.selectedDeviceId=o?.getSettings().deviceId??t??"",this.selectedDeviceId)se(this.selectedDeviceId);await this.refreshDevices()}stop(){this.stream?.getTracks().forEach((e)=>e.stop()),this.stream=null,this.preview.srcObject=null}cloneVideoTrack(){let e=this.stream?.getVideoTracks()[0];if(!e)throw Error("カメラ映像トラックがありません。");return e.clone()}async refreshDevices(){let e=await navigator.mediaDevices.enumerateDevices();return this.devices=e.filter((t)=>t.kind==="videoinput"),[...this.devices]}async switchToNext(){if(this.devices.length<2)await this.refreshDevices();if(this.devices.length<2)throw Error("切替可能なカメラがありません。");let e=Math.max(0,this.devices.findIndex((i)=>i.deviceId===this.selectedDeviceId)),t=this.devices[(e+1)%this.devices.length];if(!t)throw Error("次のカメラを選択できませんでした。");await this.start(t.deviceId)}}class L{sourceStream=null;get active(){return this.sourceStream?.getAudioTracks().some((e)=>e.readyState==="live")??!1}async requestAudioTrack(){this.stop();let e=navigator.mediaDevices;if(!e?.getDisplayMedia)throw Error("このSafariでは画面・タブ音声共有の許可APIを使用できません。");let t=await e.getDisplayMedia({video:!0,audio:!0}),i=t.getAudioTracks()[0];if(!i)throw t.getTracks().forEach((s)=>s.stop()),Error("共有した画面またはタブから音声トラックを取得できませんでした。音声共有を有効にしてください。");this.sourceStream=t;let o=()=>{if(this.sourceStream===t)this.stop()};return t.getVideoTracks()[0]?.addEventListener("ended",o,{once:!0}),i.addEventListener("ended",o,{once:!0}),i.clone()}stop(){this.sourceStream?.getTracks().forEach((e)=>e.stop()),this.sourceStream=null}}class M{recorder=null;stream=null;chunks=[];startedAt=0;get active(){return this.recorder?.state==="recording"}get elapsedSeconds(){return this.active?(performance.now()-this.startedAt)/1000:0}start(e,t){if(this.active)throw Error("すでに録画中です。");if(!window.MediaRecorder)throw Error("MediaRecorder APIを使用できません。");if(MediaRecorder.isTypeSupported&&!MediaRecorder.isTypeSupported(c))throw Error(`このSafariは${c}の録画に対応していません。`);this.stream=new MediaStream([e,t]),this.chunks=[],this.recorder=new MediaRecorder(this.stream,{mimeType:c}),this.recorder.addEventListener("dataavailable",(i)=>{if(i.data.size>0)this.chunks.push(i.data)}),this.recorder.start(1000),this.startedAt=performance.now()}async stop(){let e=this.recorder;if(!e||e.state!=="recording")throw Error("録画は開始されていません。");let t=(performance.now()-this.startedAt)/1000;if(await new Promise((a,d)=>{e.addEventListener("stop",()=>a(),{once:!0}),e.addEventListener("error",(l)=>{let u="error"in l?l.error:void 0;d(u??Error("MediaRecorderでエラーが発生しました。"))},{once:!0}),e.stop()}),this.stream?.getTracks().forEach((a)=>a.stop()),this.stream=null,this.recorder=null,this.chunks.length===0)throw Error("録画データが生成されませんでした。");let i=new Blob(this.chunks,{type:c}),o=new Date().toISOString().replace(/[-:]/g,"").replace(/\..+/,"");return{file:new File([i],`Pinstar-${o}.mp4`,{type:c}),durationSeconds:t}}cancel(){if(this.recorder?.state==="recording")this.recorder.stop();this.stream?.getTracks().forEach((e)=>e.stop()),this.stream=null,this.recorder=null,this.chunks=[]}}var p=(e)=>{if(!Number.isFinite(e)||e<0)return"--:--";let t=Math.floor(e),i=Math.floor(t/3600),o=Math.floor(t%3600/60),s=t%60;return i>0?`${i}:${String(o).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${o}:${String(s).padStart(2,"0")}`},w=(e)=>{if(e instanceof DOMException)return`${e.name}: ${e.message}`;if(e instanceof Error)return`${e.name}: ${e.message}`;return String(e)},ae=(e)=>new Promise((t)=>window.setTimeout(t,e));var ne=String.raw`
+(()=>{var p="0.5.0",g="pinstar-root",w="pinstar.camera.deviceId",Y=800,j=200,f=340;var G=(e)=>{try{return localStorage.getItem(e)??""}catch{return""}},W=(e,t)=>{try{localStorage.setItem(e,t)}catch{}},A=()=>({cameraDeviceId:G(w)}),F=(e)=>{W(w,e)};class b{preview;stream=null;devices=[];selectedDeviceId="";constructor(e){this.preview=e}get ready(){return Boolean(this.stream?.getVideoTracks()[0])}get currentDeviceId(){return this.selectedDeviceId}async start(e){if(!navigator.mediaDevices?.getUserMedia)throw Error("このSafariではカメラAPIを使用できません。");this.stop();let t=e||this.selectedDeviceId,i=t?{deviceId:{exact:t},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:30}}:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:30}};this.stream=await navigator.mediaDevices.getUserMedia({video:i,audio:!1}),this.preview.srcObject=this.stream,await this.preview.play();let a=this.stream.getVideoTracks()[0];if(this.selectedDeviceId=a?.getSettings().deviceId??t??"",this.selectedDeviceId)F(this.selectedDeviceId);await this.refreshDevices()}stop(){this.stream?.getTracks().forEach((e)=>e.stop()),this.stream=null,this.preview.srcObject=null}async refreshDevices(){let e=await navigator.mediaDevices.enumerateDevices();return this.devices=e.filter((t)=>t.kind==="videoinput"),[...this.devices]}async switchToNext(){if(this.devices.length<2)await this.refreshDevices();if(this.devices.length<2)throw Error("切替可能なカメラがありません。");let e=Math.max(0,this.devices.findIndex((i)=>i.deviceId===this.selectedDeviceId)),t=this.devices[(e+1)%this.devices.length];if(!t)throw Error("次のカメラを選択できませんでした。");await this.start(t.deviceId)}}var x=(e)=>{if(!Number.isFinite(e)||e<0)return"--:--";let t=Math.floor(e),i=Math.floor(t/3600),a=Math.floor(t%3600/60),s=t%60;return i>0?`${i}:${String(a).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${a}:${String(s).padStart(2,"0")}`},u=(e)=>{if(e instanceof DOMException)return`${e.name}: ${e.message}`;if(e instanceof Error)return`${e.name}: ${e.message}`;return String(e)};var q=String.raw`
   :host { all: initial; }
   *, *::before, *::after { box-sizing: border-box; }
   button, select, input { font: inherit; }
@@ -32,6 +32,7 @@
     inset: 0;
     pointer-events: none;
     background: linear-gradient(180deg, rgba(0,0,0,.55), transparent 24%, transparent 65%, rgba(0,0,0,.72));
+    transition: opacity .16s ease;
   }
 
   #tap-layer {
@@ -63,6 +64,7 @@
     gap: 6px;
     align-items: center;
     min-width: 0;
+    transition: opacity .16s ease;
   }
 
   .glass {
@@ -97,8 +99,7 @@
   #status-dot.error { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255,59,48,.2); }
   #status-text { overflow: hidden; text-overflow: ellipsis; }
 
-  #camera-select,
-  #countdown-select {
+  #camera-select {
     min-width: 0;
     height: 38px;
     padding: 0 28px 0 10px;
@@ -109,8 +110,7 @@
   }
 
   .icon-button,
-  .control-button,
-  #share {
+  .control-button {
     height: 38px;
     border-radius: 12px;
     color: #fff;
@@ -151,7 +151,7 @@
     position: absolute;
     z-index: 5;
     left: max(8px, env(safe-area-inset-left));
-    right: max(96px, calc(env(safe-area-inset-right) + 90px));
+    right: max(8px, env(safe-area-inset-right));
     bottom: max(8px, env(safe-area-inset-bottom));
     display: grid;
     grid-template-columns: auto auto auto minmax(72px, 1fr) auto;
@@ -160,100 +160,20 @@
     min-width: 0;
     padding: 7px;
     border-radius: 16px;
+    transition: opacity .16s ease;
   }
   #seek { width: 100%; min-width: 0; accent-color: #fff; }
   #clock { min-width: 82px; font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  #record-dock {
-    position: absolute;
-    z-index: 6;
-    right: max(12px, calc(env(safe-area-inset-right) + 10px));
-    bottom: max(8px, env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-
-  #record-time {
-    display: none;
-    align-items: center;
-    gap: 7px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(0,0,0,.62);
-    font-size: 14px;
-    font-weight: 750;
-    font-variant-numeric: tabular-nums;
-  }
-  #record-time.visible { display: flex; }
-  #record-time::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #ff3b30;
-  }
-
-  #record {
-    width: 68px;
-    height: 68px;
-    padding: 5px;
-    border: 4px solid rgba(255,255,255,.96);
-    border-radius: 50%;
-    background: rgba(0,0,0,.22);
-    box-shadow: 0 10px 32px rgba(0,0,0,.32);
-  }
-  #record::before {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: #ff3b30;
-    transition: .16s ease;
-  }
-  #record.recording::before {
-    width: 52%;
-    height: 52%;
-    margin: 24%;
-    border-radius: 6px;
-  }
-  #record.countdown::before { animation: pulse .75s infinite alternate; }
-  @keyframes pulse { to { opacity: .6; transform: scale(.82); } }
-
-  #countdown-select,
-  #share {
-    width: 68px;
-    min-width: 68px;
-    height: 31px;
-    border-radius: 999px;
-    font-size: 11px;
-  }
-  #countdown-select { padding: 0 21px 0 8px; }
-  #share { padding: 0 7px; }
-
-  #countdown-overlay {
-    position: absolute;
-    z-index: 10;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    background: rgba(0,0,0,.24);
+  #app.ui-hidden #shade,
+  #app.ui-hidden #topbar,
+  #app.ui-hidden #center-card,
+  #app.ui-hidden #playback-controls {
+    opacity: 0;
     pointer-events: none;
   }
-  #countdown-overlay.hidden { display: none; }
-  #countdown-number {
-    min-width: 110px;
-    padding: 16px 24px;
-    border-radius: 24px;
-    background: rgba(0,0,0,.68);
-    font-size: clamp(58px, 18vw, 110px);
-    font-weight: 850;
-    line-height: 1;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
+
+  #app.ui-hidden #tap-layer { inset: 0; }
 
   #toast {
     position: absolute;
@@ -302,15 +222,12 @@
     #topbar { grid-template-columns: auto minmax(64px, 1fr) auto auto auto; }
     #status-text { display: none; }
     #playback-controls {
-      right: max(84px, calc(env(safe-area-inset-right) + 78px));
+      right: max(8px, env(safe-area-inset-right));
       grid-template-columns: 40px 52px 40px minmax(45px, 1fr);
       padding: 6px;
     }
     #clock { display: none; }
-    #record-dock { right: max(8px, calc(env(safe-area-inset-right) + 6px)); }
-    #record { width: 62px; height: 62px; }
-    #countdown-select, #share { width: 62px; min-width: 62px; }
-    #tap-layer { bottom: 86px; }
+    #tap-layer { bottom: 68px; }
   }
 
   @media (max-width: 430px) {
@@ -320,8 +237,8 @@
     #topbar, #playback-controls { gap: 4px; }
     .control-button { padding: 0 7px; }
   }
-`;var r=(e,t={},i)=>{let o=document.createElement(e);for(let[s,a]of Object.entries(t))if(s==="class")o.className=a;else o.setAttribute(s,a);if(i!==void 0)o.textContent=i;return o},n=(e,t,i,o)=>r("button",{id:e,class:i,type:"button","aria-label":o??t},t),de=()=>{document.getElementById(y)?.remove();let e=r("div",{id:y});Object.assign(e.style,{position:"fixed",zIndex:"2147483647",margin:"0",padding:"0",overflow:"hidden",pointerEvents:"auto"});let t=e.attachShadow({mode:"open"}),i=r("style");i.textContent=ne,t.append(i);let o=r("div",{id:"app"}),s=r("video",{id:"camera",autoplay:"",muted:"",playsinline:""});s.muted=!0,o.append(s,r("div",{id:"shade"}));let a=r("div",{id:"tap-layer","aria-label":"左右をダブルタップして5秒移動"}),d=r("div",{id:"tap-left",class:"tap-zone"}),l=r("div",{id:"tap-right",class:"tap-zone"});a.append(d,l),o.append(a);let u=r("div",{id:"topbar"}),C=r("div",{id:"brand",class:"glass"}),I=r("span",{id:"status-dot"}),P=r("span",{id:"status-text"},"初期化中");C.append(I,r("span",{},"Pinstar"),P);let v=r("select",{id:"camera-select",class:"glass","aria-label":"カメラ入力"});v.append(new Option("カメラ",""));let R=n("switch-camera","↻","icon-button glass","カメラ切替"),H=n("logs","≡","icon-button glass","動作ログ"),O=n("close","×","icon-button glass","閉じる");u.append(C,v,R,H,O),o.append(u);let m=r("div",{id:"center-card",class:"glass"});m.append(r("h1",{},"カメラを開始"),r("p",{},"映像にはカメラだけを使用します。録画開始時に画面・タブ音声共有の許可を求め、マイクは使用しません。"));let V=n("start-camera","カメラを許可して開始","");m.append(V),o.append(m);let _=r("div",{id:"playback-controls",class:"glass"}),$=n("back","−5","control-button glass"),A=n("play","再生","control-button"),N=n("forward","+5","control-button glass"),z=r("input",{id:"seek",type:"range",min:"0",max:"1000",value:"0",step:"1","aria-label":"再生位置"}),F=r("span",{id:"clock"},"--:-- / --:--");_.append($,A,N,z,F),o.append(_);let U=r("div",{id:"record-dock"}),Y=r("span",{id:"record-time"},"00:00"),j=n("record","","","録画開始"),g=r("select",{id:"countdown-select",class:"glass","aria-label":"録画開始カウントダウン"});g.append(new Option("3秒","3"),new Option("5秒","5"),new Option("10秒","10"));let f=n("share","共有","glass");f.disabled=!0,U.append(Y,j,g,f),o.append(U);let b=r("div",{id:"countdown-overlay",class:"hidden"}),q=r("div",{id:"countdown-number"},"3");b.append(q),o.append(b);let K=r("div",{id:"toast"});o.append(K);let x=r("div",{id:"log-modal",class:"hidden"}),W=r("div",{id:"log-panel",class:"glass"}),J=r("div",{id:"log-head"}),G=n("copy-logs","コピー","control-button glass"),Q=n("close-logs","閉じる","control-button glass");J.append(r("strong",{},"動作ログ"),G,Q);let X=r("div",{id:"log-list"});return W.append(J,X),x.append(W),o.append(x),t.append(o),document.documentElement.append(e),{host:e,shadow:t,app:o,camera:s,statusDot:I,statusText:P,cameraSelect:v,switchCamera:R,logsButton:H,closeButton:O,centerCard:m,startCamera:V,tapLeft:d,tapRight:l,back:$,play:A,forward:N,seek:z,clock:F,recordButton:j,recordTime:Y,countdownSelect:g,shareButton:f,countdownOverlay:b,countdownNumber:q,toast:K,logModal:x,logList:X,copyLogs:G,closeLogs:Q}};var le=["video.html5-main-video","#movie_player video","ytm-player video","video"];class D{video=null;refresh(){for(let e of le){let t=document.querySelector(e);if(t)return t.playsInline=!0,this.video=t,t}return this.video=null,null}get current(){return this.video??this.refresh()}async togglePlayback(){let e=this.requireVideo();if(e.paused)await e.play();else e.pause()}seekBy(e){let t=this.requireVideo(),i=Number.isFinite(t.duration)?t.duration:Number.POSITIVE_INFINITY;t.currentTime=Math.max(0,Math.min(i,t.currentTime+e))}seekToFraction(e){let t=this.requireVideo();if(!Number.isFinite(t.duration)||t.duration<=0)return;t.currentTime=Math.max(0,Math.min(1,e))*t.duration}setupDoubleTap(e,t,i){let o=0,s=(a)=>{a.preventDefault(),a.stopPropagation();let d=performance.now();if(d-o<=te)o=0,this.seekBy(t),i();else o=d};return e.addEventListener("pointerup",s),()=>e.removeEventListener("pointerup",s)}requireVideo(){let e=this.current;if(!e)throw Error("YouTube動画のvideo要素が見つかりません。");return e}}class B{view=de();youtube=new D;camera=new E(this.view.camera);displayAudio=new L;recorder=new M;logs=[];cleanup=[];settings=re();recorderState="idle";lastFile=null;countdownToken=0;toastTimer=0;youtubePoll=0;uiTimer=0;destroyed=!1;originalDocumentOverflow=document.documentElement.style.overflow;originalBodyOverflow=document.body?.style.overflow??"";start(){if(document.documentElement.style.overflow="hidden",document.body)document.body.style.overflow="hidden";if(this.view.countdownSelect.value=String(this.settings.countdownSeconds),this.syncViewport(),this.bindEvents(),this.refreshYouTube(),this.renderPlayback(),this.renderStatus(),this.renderLogs(),this.youtubePoll=window.setInterval(()=>this.refreshYouTube(),Z),this.uiTimer=window.setInterval(()=>{this.renderPlayback(),this.renderRecordingTime()},ee),this.log("info",`Pinstar v${h}を開始しました。`,location.href),!/^(www\.|m\.)?youtube\.com$/i.test(location.hostname))this.log("warn","YouTube以外のページで実行されています。",location.hostname)}destroy(){if(this.destroyed)return;if(this.recorderState!=="idle"){this.showToast("録画を終了してから閉じてください");return}if(this.destroyed=!0,this.camera.stop(),this.displayAudio.stop(),this.recorder.cancel(),window.clearInterval(this.youtubePoll),window.clearInterval(this.uiTimer),window.clearTimeout(this.toastTimer),this.cleanup.splice(0).forEach((e)=>e()),document.documentElement.style.overflow=this.originalDocumentOverflow,document.body)document.body.style.overflow=this.originalBodyOverflow;this.view.host.remove()}bindEvents(){if(this.bind(window,"resize",()=>this.syncViewport()),window.visualViewport)this.bind(window.visualViewport,"resize",()=>this.syncViewport()),this.bind(window.visualViewport,"scroll",()=>this.syncViewport());this.bind(this.view.startCamera,"click",()=>void this.startCamera(this.settings.cameraDeviceId||void 0)),this.bind(this.view.switchCamera,"click",()=>void this.switchCamera()),this.bind(this.view.cameraSelect,"change",()=>{if(this.view.cameraSelect.value)this.startCamera(this.view.cameraSelect.value)}),this.bind(this.view.closeButton,"click",()=>this.destroy()),this.bind(this.view.logsButton,"click",()=>this.view.logModal.classList.remove("hidden")),this.bind(this.view.closeLogs,"click",()=>this.view.logModal.classList.add("hidden")),this.bind(this.view.copyLogs,"click",()=>void this.copyLogs()),this.bind(this.view.back,"click",()=>this.seekBy(-5)),this.bind(this.view.forward,"click",()=>this.seekBy(5)),this.bind(this.view.play,"click",()=>void this.togglePlayback()),this.bind(this.view.seek,"input",()=>{this.youtube.seekToFraction(Number(this.view.seek.value)/1000)}),this.cleanup.push(this.youtube.setupDoubleTap(this.view.tapLeft,-5,()=>this.showToast("5秒戻る"))),this.cleanup.push(this.youtube.setupDoubleTap(this.view.tapRight,5,()=>this.showToast("5秒進む"))),this.bind(this.view.countdownSelect,"change",()=>{let e=Number(this.view.countdownSelect.value);k(e)}),this.bind(this.view.recordButton,"click",()=>void this.handleRecordButton()),this.bind(this.view.shareButton,"click",()=>void this.shareRecording())}bind(e,t,i){e.addEventListener(t,i),this.cleanup.push(()=>e.removeEventListener(t,i))}syncViewport(){let e=window.visualViewport,t=e?.offsetLeft??0,i=e?.offsetTop??0,o=e?.width??window.innerWidth,s=e?.height??window.innerHeight;Object.assign(this.view.host.style,{left:`${t}px`,top:`${i}px`,width:`${o}px`,height:`${s}px`})}refreshYouTube(){let e=Boolean(this.youtube.current),t=this.youtube.refresh();if(!e&&t)this.log("info","YouTubeのvideo要素を検出しました。");this.renderStatus()}async startCamera(e){if(this.recorderState!=="idle"){this.showToast("録画中はカメラを変更できません");return}try{this.log("info","カメラ権限を要求しています。"),await this.camera.start(e),await this.populateCameraSelect(),this.view.centerCard.classList.add("hidden"),this.log("info","カメラを開始しました。",this.camera.currentDeviceId),this.showToast("カメラ開始")}catch(t){this.log("error","カメラを開始できませんでした。",t),this.showToast("カメラ開始失敗")}this.renderStatus()}async populateCameraSelect(){let e=await this.camera.refreshDevices();if(this.view.cameraSelect.replaceChildren(),e.length===0){this.view.cameraSelect.append(new Option("カメラなし",""));return}e.forEach((t,i)=>{this.view.cameraSelect.append(new Option(t.label||`カメラ ${i+1}`,t.deviceId))}),this.view.cameraSelect.value=this.camera.currentDeviceId}async switchCamera(){if(this.recorderState!=="idle")return;try{await this.camera.switchToNext(),await this.populateCameraSelect(),this.showToast("カメラ切替")}catch(e){this.log("warn","カメラを切り替えられませんでした。",e),this.showToast("カメラ切替失敗")}}async togglePlayback(){try{await this.youtube.togglePlayback()}catch(e){this.log("error","再生操作に失敗しました。",e),this.showToast("再生できません")}}seekBy(e){try{this.youtube.seekBy(e),this.showToast(e<0?"5秒戻る":"5秒進む")}catch(t){this.log("error","シーク操作に失敗しました。",t),this.showToast("シークできません")}}renderPlayback(){let e=this.youtube.current;if(!e){this.view.play.textContent="再生",this.view.seek.disabled=!0,this.view.clock.textContent="--:-- / --:--";return}this.view.play.textContent=e.paused?"再生":"停止";let t=Number.isFinite(e.duration)&&e.duration>0;if(this.view.seek.disabled=!t,t&&!this.view.seek.matches(":active"))this.view.seek.value=String(Math.round(e.currentTime/e.duration*1000));this.view.clock.textContent=`${p(e.currentTime)} / ${p(e.duration)}`}async handleRecordButton(){if(this.recorderState==="recording"){await this.stopRecording();return}if(this.recorderState==="countdown"){this.cancelCountdown();return}if(this.recorderState==="encoding")return;await this.startCountdown()}async startCountdown(){if(!this.camera.ready||!this.youtube.current){this.showToast("カメラとYouTubeを準備してください");return}let e;try{this.log("info","画面・タブ音声共有の許可を要求しています。"),e=await this.displayAudio.requestAudioTrack(),this.log("info","共有音声トラックを取得しました。",e.label||"display audio")}catch(o){this.log("error","共有音声を取得できませんでした。",o),this.showToast("音声共有を許可できません",2200);return}let t=Number(this.view.countdownSelect.value);k(t),this.recorderState="countdown",this.view.recordButton.classList.add("countdown"),this.view.countdownSelect.disabled=!0,this.view.cameraSelect.disabled=!0,this.view.switchCamera.disabled=!0,this.view.countdownOverlay.classList.remove("hidden"),this.renderStatus();let i=++this.countdownToken;try{for(let s=t;s>0;s-=1){if(i!==this.countdownToken){e.stop(),this.displayAudio.stop();return}this.view.countdownNumber.textContent=String(s),await ae(1000)}if(i!==this.countdownToken){e.stop(),this.displayAudio.stop();return}if(e.readyState!=="live")throw Error("録画開始前に共有音声トラックが終了しました。");let o=this.camera.cloneVideoTrack();e.addEventListener("ended",()=>{if(this.recorderState==="recording")this.stopRecording()},{once:!0}),this.recorder.start(o,e),this.recorderState="recording",this.view.recordButton.classList.remove("countdown"),this.view.recordButton.classList.add("recording"),this.view.recordButton.setAttribute("aria-label","録画終了"),this.view.recordTime.classList.add("visible"),this.view.countdownOverlay.classList.add("hidden"),this.lastFile=null,this.view.shareButton.disabled=!0,this.log("info","録画を開始しました。音声入力は許可された画面・タブ共有です。"),this.showToast("録画開始")}catch(o){e.stop(),this.displayAudio.stop(),this.log("error","録画を開始できませんでした。",o),this.showToast("録画開始失敗",2000),this.resetRecorderUi()}this.renderStatus()}cancelCountdown(){this.countdownToken+=1,this.displayAudio.stop(),this.recorderState="idle",this.view.countdownOverlay.classList.add("hidden"),this.resetRecorderUi(),this.renderStatus(),this.showToast("録画をキャンセルしました")}async stopRecording(){this.recorderState="encoding",this.view.recordButton.disabled=!0,this.view.recordButton.classList.remove("recording"),this.view.recordButton.setAttribute("aria-label","エンコード中"),this.renderStatus(),this.showToast("エンコード中…",1800);try{let e=await this.recorder.stop();this.lastFile=e.file,this.view.shareButton.disabled=!1,this.log("info","MP4の生成が完了しました。",`${(e.file.size/1024/1024).toFixed(1)} MB / ${p(e.durationSeconds)}`),this.showToast("録画を共有できます",1800)}catch(e){this.log("error","録画を終了できませんでした。",e),this.showToast("録画終了失敗",1800)}finally{this.displayAudio.stop(),this.recorderState="idle",this.resetRecorderUi(),this.renderStatus()}}resetRecorderUi(){this.view.recordButton.disabled=!1,this.view.recordButton.classList.remove("recording","countdown"),this.view.recordButton.setAttribute("aria-label","録画開始"),this.view.recordTime.classList.remove("visible"),this.view.recordTime.textContent="00:00",this.view.countdownSelect.disabled=!1,this.view.cameraSelect.disabled=!1,this.view.switchCamera.disabled=!1}renderRecordingTime(){if(this.recorderState!=="recording")return;this.view.recordTime.textContent=p(this.recorder.elapsedSeconds)}async shareRecording(){let e=this.lastFile;if(!e){this.showToast("共有する録画がありません");return}if(!navigator.share||!navigator.canShare?.({files:[e]})){this.log("error","このSafariではMP4ファイル共有を使用できません。"),this.showToast("ファイル共有非対応");return}try{await navigator.share({files:[e],title:"Pinstar録画"}),this.log("info","共有シートへ録画を渡しました。",e.name)}catch(t){if(t instanceof DOMException&&t.name==="AbortError")return;this.log("error","録画を共有できませんでした。",t),this.showToast("共有失敗")}}renderStatus(){this.view.statusDot.className="";let e=Boolean(this.youtube.current);if(this.logs.some((t)=>t.level==="error"))this.view.statusDot.classList.add("error");else if(e&&this.camera.ready)this.view.statusDot.classList.add("ready");if(this.recorderState==="recording")this.view.statusText.textContent="録画中";else if(this.recorderState==="countdown")this.view.statusText.textContent="待機中";else if(this.recorderState==="encoding")this.view.statusText.textContent="処理中";else if(!e)this.view.statusText.textContent="YouTube待機";else if(!this.camera.ready)this.view.statusText.textContent="カメラ待機";else this.view.statusText.textContent="準備完了"}log(e,t,i){if(this.logs.push({at:new Date().toLocaleTimeString("ja-JP",{hour12:!1}),level:e,message:t,detail:i===void 0?void 0:w(i)}),this.logs.length>100)this.logs.shift();this.renderLogs(),this.renderStatus(),console[e==="error"?"error":e==="warn"?"warn":"info"](`[Pinstar] ${t}`,i??"")}renderLogs(){if(this.view.logList.replaceChildren(),this.logs.length===0){this.view.logList.textContent="ログはありません。";return}for(let e of this.logs){let t=document.createElement("div");t.className=`log-row ${e.level}`,t.textContent=`[${e.at}] ${e.message}${e.detail?`
+`;var o=(e,t={},i)=>{let a=document.createElement(e);for(let[s,n]of Object.entries(t))if(s==="class")a.className=n;else a.setAttribute(s,n);if(i!==void 0)a.textContent=i;return a},r=(e,t,i,a)=>o("button",{id:e,class:i,type:"button","aria-label":a??t},t),K=()=>{document.getElementById(g)?.remove();let e=o("div",{id:g});Object.assign(e.style,{position:"fixed",zIndex:"2147483647",margin:"0",padding:"0",overflow:"hidden",pointerEvents:"auto"});let t=e.attachShadow({mode:"open"}),i=o("style");i.textContent=q,t.append(i);let a=o("div",{id:"app"}),s=o("video",{id:"camera",autoplay:"",muted:"",playsinline:""});s.muted=!0,a.append(s,o("div",{id:"shade"}));let n=o("div",{id:"tap-layer","aria-label":"タップでUI表示切替、左右をダブルタップして5秒移動"}),d=o("div",{id:"tap-left",class:"tap-zone"}),l=o("div",{id:"tap-right",class:"tap-zone"});n.append(d,l),a.append(n);let c=o("div",{id:"topbar"}),L=o("div",{id:"brand",class:"glass"}),k=o("span",{id:"status-dot"}),E=o("span",{id:"status-text"},"初期化中");L.append(k,o("span",{},"Pinstar"),E);let m=o("select",{id:"camera-select",class:"glass","aria-label":"カメラ入力"});m.append(new Option("カメラ",""));let M=r("switch-camera","↻","icon-button glass","カメラ切替"),S=r("logs","≡","icon-button glass","動作ログ"),I=r("close","×","icon-button glass","閉じる");c.append(L,m,M,S,I),a.append(c);let h=o("div",{id:"center-card",class:"glass"});h.append(o("h1",{},"カメラを開始"),o("p",{},"カメラ映像を表示します。画面をタップすると操作UIを非表示にできます。"));let D=r("start-camera","カメラを許可して開始","");h.append(D),a.append(h);let P=o("div",{id:"playback-controls",class:"glass"}),C=r("back","−5","control-button glass"),H=r("play","再生","control-button"),_=r("forward","+5","control-button glass"),B=o("input",{id:"seek",type:"range",min:"0",max:"1000",value:"0",step:"1","aria-label":"再生位置"}),V=o("span",{id:"clock"},"--:-- / --:--");P.append(C,H,_,B,V),a.append(P);let O=o("div",{id:"toast"});a.append(O);let v=o("div",{id:"log-modal",class:"hidden"}),$=o("div",{id:"log-panel",class:"glass"}),N=o("div",{id:"log-head"}),z=r("copy-logs","コピー","control-button glass"),R=r("close-logs","閉じる","control-button glass");N.append(o("strong",{},"動作ログ"),z,R);let U=o("div",{id:"log-list"});return $.append(N,U),v.append($),a.append(v),t.append(a),document.documentElement.append(e),{host:e,shadow:t,app:a,camera:s,statusDot:k,statusText:E,cameraSelect:m,switchCamera:M,logsButton:S,closeButton:I,centerCard:h,startCamera:D,tapLeft:d,tapRight:l,back:C,play:H,forward:_,seek:B,clock:V,toast:O,logModal:v,logList:U,copyLogs:z,closeLogs:R}};var J=["video.html5-main-video","#movie_player video","ytm-player video","video"];class y{video=null;refresh(){for(let e of J){let t=document.querySelector(e);if(t)return t.playsInline=!0,this.video=t,t}return this.video=null,null}get current(){return this.video??this.refresh()}async togglePlayback(){let e=this.requireVideo();if(e.paused)await e.play();else e.pause()}seekBy(e){let t=this.requireVideo(),i=Number.isFinite(t.duration)?t.duration:Number.POSITIVE_INFINITY;t.currentTime=Math.max(0,Math.min(i,t.currentTime+e))}seekToFraction(e){let t=this.requireVideo();if(!Number.isFinite(t.duration)||t.duration<=0)return;t.currentTime=Math.max(0,Math.min(1,e))*t.duration}setupTapGestures(e,t,i,a){let s=0,n=0,d=(l)=>{l.preventDefault(),l.stopPropagation();let c=performance.now();if(c-s<=f)window.clearTimeout(n),s=0,this.seekBy(t),a();else s=c,n=window.setTimeout(()=>{s=0,i()},f)};return e.addEventListener("pointerup",d),()=>{window.clearTimeout(n),e.removeEventListener("pointerup",d)}}requireVideo(){let e=this.current;if(!e)throw Error("YouTube動画のvideo要素が見つかりません。");return e}}class T{view=K();youtube=new y;camera=new b(this.view.camera);logs=[];cleanup=[];settings=A();toastTimer=0;youtubePoll=0;uiTimer=0;destroyed=!1;originalDocumentOverflow=document.documentElement.style.overflow;originalBodyOverflow=document.body?.style.overflow??"";start(){if(document.documentElement.style.overflow="hidden",document.body)document.body.style.overflow="hidden";if(this.syncViewport(),this.bindEvents(),this.refreshYouTube(),this.renderPlayback(),this.renderStatus(),this.renderLogs(),this.youtubePoll=window.setInterval(()=>this.refreshYouTube(),Y),this.uiTimer=window.setInterval(()=>this.renderPlayback(),j),this.log("info",`Pinstar v${p}を開始しました。`,location.href),!/^(www\.|m\.)?youtube\.com$/i.test(location.hostname))this.log("warn","YouTube以外のページで実行されています。",location.hostname)}destroy(){if(this.destroyed)return;if(this.destroyed=!0,this.camera.stop(),window.clearInterval(this.youtubePoll),window.clearInterval(this.uiTimer),window.clearTimeout(this.toastTimer),this.cleanup.splice(0).forEach((e)=>e()),document.documentElement.style.overflow=this.originalDocumentOverflow,document.body)document.body.style.overflow=this.originalBodyOverflow;this.view.host.remove()}bindEvents(){if(this.bind(window,"resize",()=>this.syncViewport()),window.visualViewport)this.bind(window.visualViewport,"resize",()=>this.syncViewport()),this.bind(window.visualViewport,"scroll",()=>this.syncViewport());this.bind(this.view.startCamera,"click",()=>void this.startCamera(this.settings.cameraDeviceId||void 0)),this.bind(this.view.switchCamera,"click",()=>void this.switchCamera()),this.bind(this.view.cameraSelect,"change",()=>{if(this.view.cameraSelect.value)this.startCamera(this.view.cameraSelect.value)}),this.bind(this.view.closeButton,"click",()=>this.destroy()),this.bind(this.view.logsButton,"click",()=>this.view.logModal.classList.remove("hidden")),this.bind(this.view.closeLogs,"click",()=>this.view.logModal.classList.add("hidden")),this.bind(this.view.copyLogs,"click",()=>void this.copyLogs()),this.bind(this.view.back,"click",()=>this.seekBy(-5)),this.bind(this.view.forward,"click",()=>this.seekBy(5)),this.bind(this.view.play,"click",()=>void this.togglePlayback()),this.bind(this.view.seek,"input",()=>{this.youtube.seekToFraction(Number(this.view.seek.value)/1000)}),this.cleanup.push(this.youtube.setupTapGestures(this.view.tapLeft,-5,()=>this.toggleUi(),()=>this.showToast("5秒戻る"))),this.cleanup.push(this.youtube.setupTapGestures(this.view.tapRight,5,()=>this.toggleUi(),()=>this.showToast("5秒進む")))}bind(e,t,i){e.addEventListener(t,i),this.cleanup.push(()=>e.removeEventListener(t,i))}syncViewport(){let e=window.visualViewport,t=e?.offsetLeft??0,i=e?.offsetTop??0,a=e?.width??window.innerWidth,s=e?.height??window.innerHeight;Object.assign(this.view.host.style,{left:`${t}px`,top:`${i}px`,width:`${a}px`,height:`${s}px`})}refreshYouTube(){let e=Boolean(this.youtube.current),t=this.youtube.refresh();if(!e&&t)this.log("info","YouTubeのvideo要素を検出しました。");this.renderStatus()}async startCamera(e){try{this.log("info","カメラ権限を要求しています。"),await this.camera.start(e),await this.populateCameraSelect(),this.view.centerCard.classList.add("hidden"),this.log("info","カメラを開始しました。",this.camera.currentDeviceId),this.showToast("カメラ開始")}catch(t){this.log("error","カメラを開始できませんでした。",t),this.showToast("カメラ開始失敗")}this.renderStatus()}async populateCameraSelect(){let e=await this.camera.refreshDevices();if(this.view.cameraSelect.replaceChildren(),e.length===0){this.view.cameraSelect.append(new Option("カメラなし",""));return}e.forEach((t,i)=>{this.view.cameraSelect.append(new Option(t.label||`カメラ ${i+1}`,t.deviceId))}),this.view.cameraSelect.value=this.camera.currentDeviceId}async switchCamera(){try{await this.camera.switchToNext(),await this.populateCameraSelect(),this.showToast("カメラ切替")}catch(e){this.log("warn","カメラを切り替えられませんでした。",e),this.showToast("カメラ切替失敗")}}async togglePlayback(){try{await this.youtube.togglePlayback()}catch(e){this.log("error","再生操作に失敗しました。",e),this.showToast("再生できません")}}seekBy(e){try{this.youtube.seekBy(e),this.showToast(e<0?"5秒戻る":"5秒進む")}catch(t){this.log("error","シーク操作に失敗しました。",t),this.showToast("シークできません")}}renderPlayback(){let e=this.youtube.current;if(!e){this.view.play.textContent="再生",this.view.seek.disabled=!0,this.view.clock.textContent="--:-- / --:--";return}this.view.play.textContent=e.paused?"再生":"停止";let t=Number.isFinite(e.duration)&&e.duration>0;if(this.view.seek.disabled=!t,t&&!this.view.seek.matches(":active"))this.view.seek.value=String(Math.round(e.currentTime/e.duration*1000));this.view.clock.textContent=`${x(e.currentTime)} / ${x(e.duration)}`}toggleUi(){this.view.app.classList.toggle("ui-hidden")}renderStatus(){this.view.statusDot.className="";let e=Boolean(this.youtube.current);if(this.logs.some((t)=>t.level==="error"))this.view.statusDot.classList.add("error");else if(e&&this.camera.ready)this.view.statusDot.classList.add("ready");if(!e)this.view.statusText.textContent="YouTube待機";else if(!this.camera.ready)this.view.statusText.textContent="カメラ待機";else this.view.statusText.textContent="準備完了"}log(e,t,i){if(this.logs.push({at:new Date().toLocaleTimeString("ja-JP",{hour12:!1}),level:e,message:t,detail:i===void 0?void 0:u(i)}),this.logs.length>100)this.logs.shift();this.renderLogs(),this.renderStatus(),console[e==="error"?"error":e==="warn"?"warn":"info"](`[Pinstar] ${t}`,i??"")}renderLogs(){if(this.view.logList.replaceChildren(),this.logs.length===0){this.view.logList.textContent="ログはありません。";return}for(let e of this.logs){let t=document.createElement("div");t.className=`log-row ${e.level}`,t.textContent=`[${e.at}] ${e.message}${e.detail?`
 ${e.detail}`:""}`,this.view.logList.append(t)}}async copyLogs(){let e=this.logs.map((t)=>`[${t.at}] ${t.level.toUpperCase()} ${t.message}${t.detail?`
 ${t.detail}`:""}`).join(`
-`);try{await navigator.clipboard.writeText(e),this.showToast("ログをコピーしました")}catch(t){this.log("warn","ログをコピーできませんでした。",t)}}showToast(e,t=1300){window.clearTimeout(this.toastTimer),this.view.toast.textContent=e,this.view.toast.classList.add("show"),this.toastTimer=window.setTimeout(()=>this.view.toast.classList.remove("show"),t)}}try{window.__PINSTAR__?.destroy();let e=new B;e.start(),window.__PINSTAR__={version:h,destroy:()=>{if(e.destroy(),window.__PINSTAR__?.version===h)delete window.__PINSTAR__}}}catch(e){console.error("[Pinstar] fatal",e),alert(`Pinstarの起動に失敗しました。
-${w(e)}`)}})();
+`);try{await navigator.clipboard.writeText(e),this.showToast("ログをコピーしました")}catch(t){this.log("warn","ログをコピーできませんでした。",t)}}showToast(e,t=1300){window.clearTimeout(this.toastTimer),this.view.toast.textContent=e,this.view.toast.classList.add("show"),this.toastTimer=window.setTimeout(()=>this.view.toast.classList.remove("show"),t)}}try{window.__PINSTAR__?.destroy();let e=new T;e.start(),window.__PINSTAR__={version:p,destroy:()=>{if(e.destroy(),window.__PINSTAR__?.version===p)delete window.__PINSTAR__}}}catch(e){console.error("[Pinstar] fatal",e),alert(`Pinstarの起動に失敗しました。
+${u(e)}`)}})();
